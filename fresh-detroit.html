@@ -744,7 +744,18 @@ async function initFirestore(){
 
   auth.onAuthStateChanged(async user=>{
     if(!user){
-      auth.signInAnonymously().catch(e=>{ console.error("Anonymous sign-in failed:", e); showToast("Couldn't connect — check Firebase Auth settings"); });
+      auth.signInAnonymously().catch(e=>{
+        // Surface the real diagnostic (error code is not sensitive — it's a
+        // public Firebase Auth error identifier, not a credential) instead
+        // of a generic message, so this is actually debuggable from the UI.
+        console.error("Anonymous sign-in failed:", e.code, e.message);
+        const hint = e.code === "auth/operation-not-allowed" || e.code === "auth/admin-restricted-operation"
+          ? "Enable Anonymous sign-in: Console → Authentication → Sign-in method"
+          : e.code === "auth/unauthorized-domain"
+          ? "Add this domain: Console → Authentication → Settings → Authorized domains"
+          : "See console for details";
+        showToast(`Auth error (${e.code||"unknown"}) — ${hint}`);
+      });
       return;
     }
     state.uid = user.uid;
@@ -764,7 +775,10 @@ async function initFirestore(){
   fd_listingsRef.where("status","==","published").onSnapshot(snap=>{
     state.listings = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     renderHome(); renderMarketplace(); renderAlerts(); renderProfile();
-  }, e=>console.error("fd_listings listener:", e));
+  }, e=>{
+    console.error("fd_listings listener:", e.code, e.message);
+    if(e.code==="permission-denied") showToast("Firestore rules for fd_listings aren't published yet");
+  });
 
   fd_alertsRef.orderBy("createdAt","desc").limit(20).onSnapshot(snap=>{
     state.alerts = snap.docs.map(d=>({id:d.id, ...d.data()}));
