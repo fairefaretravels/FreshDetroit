@@ -425,13 +425,32 @@ img{max-width:100%; display:block;}
   <div class="section" id="alertsFullList"></div>
 </div>
 
-<!-- ============================================================ FOOD FINDER ============================================================ -->
+<!-- ============================================================
+     FOOD FINDER
+============================================================ -->
 <div class="view" id="view-food">
   <div class="section" style="padding-top:20px;">
     <div class="section-title">🍽️ Food Finder</div>
-    <p style="color:var(--muted); font-size:13px; margin-top:4px;">What can you make with what's fresh right now?</p>
+    <p style="color:var(--muted); font-size:13px; margin-top:4px;">
+      What can you make with what's fresh right now?
+    </p>
   </div>
-  <div class="section" id="foodFinderBody"></div>
+
+  <div class="section" id="foodFinderBody" style="padding:0;">
+    <iframe
+      src="https://food-beta-brown.vercel.app/"
+      title="FRESH DETROIT Food Finder"
+      style="
+        width:100%;
+        min-height:800px;
+        border:0;
+        border-radius:12px;
+        background:#fff;
+      "
+      loading="lazy"
+      allow="geolocation"
+    ></iframe>
+  </div>
 </div>
 
 <!-- ============================================================ FARMS ============================================================ -->
