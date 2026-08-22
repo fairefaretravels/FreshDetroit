@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FRESH DETROIT — $50,000 Growth &amp; Launch Proposal</title>
+<meta name="description" content="FRESH DETROIT: a for-profit Detroit local-food technology platform. $50,000 growth and launch proposal.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   FRESH DETROIT — PITCH DECK
+   Palette driven by the FRESH DETROIT logo (teal / green / blue /
+   white), tan/earth kept as a subtle accent only — a deliberate
+   shift from the app's green/tan-forward palette toward something
+   more cinematic/premium for investor-facing material, per brief.
+   NOTE: no logo file was supplied/found in any linked repo — see
+   #brandLogo below. Swap the placeholder the moment you have the
+   real asset; everything else is built to not depend on it.
+============================================================ */
+:root{
+  --teal:#0b5c5c;
+  --teal-deep:#062f30;
+  --teal-bright:#1f9e9e;
+  --blue:#1f4e9c;
+  --blue-bright:#3f7fe0;
+  --green:#1f8a5f;
+  --green-bright:#33b57e;
+  --tan:#c9a66b;
+  --white:#f6faf9;
+  --dark:#03141a;
+  --card:#0a2528;
+  --card-2:#0d2f33;
+  --ink:#eef6f4;
+  --muted:#9bc0bd;
+  --line:rgba(246,250,249,0.10);
+  --radius:20px;
+  --radius-sm:13px;
+  --shadow:0 24px 60px rgba(0,0,0,0.5);
+  --ease:cubic-bezier(.22,.9,.32,1);
+  --font-display:'Fraunces',serif;
+  --font-body:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important;}
+}
+body{
+  margin:0; background:var(--dark); color:var(--ink); font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+button,input{font:inherit; color:inherit;}
+button{cursor:pointer; border:0; background:transparent;}
+a{color:inherit;}
+.mono{font-family:var(--font-mono);}
+::selection{background:var(--tan); color:var(--dark);}
+
+/* ---------------- BRAND MARK (placeholder until real logo is supplied) ---------------- */
+.brandmark{display:flex; align-items:center; gap:10px;}
+.brandmark .mark{
+  width:34px; height:34px; border-radius:9px; flex:0 0 auto;
+  background:conic-gradient(from 210deg, var(--teal-bright), var(--blue-bright), var(--green-bright), var(--teal-bright));
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--dark);
+}
+.brandmark .word{font-family:var(--font-display); font-weight:600; font-size:17px; letter-spacing:0.2px;}
+.brandmark .word em{font-style:italic; color:var(--teal-bright);}
+.brand-note{font-size:10.5px; color:var(--muted); font-family:var(--font-mono);}
+
+/* ---------------- TOP CONTROL BAR ---------------- */
+.controlbar{
+  position:fixed; top:0; left:0; right:0; z-index:80;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 20px; background:linear-gradient(180deg, rgba(3,20,26,0.95), rgba(3,20,26,0.7));
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+}
+.controlbar .actions{display:flex; gap:8px; align-items:center;}
+.btn{border-radius:999px; padding:10px 18px; font-weight:700; font-size:12.5px; letter-spacing:0.3px; transition:transform .2s var(--ease);}
+.btn:active{transform:scale(0.96);}
+.btn-primary{background:var(--white); color:var(--teal-deep);}
+.btn-outline{background:transparent; color:var(--ink); border:1.5px solid rgba(246,250,249,0.3);}
+.btn-ghost{background:rgba(246,250,249,0.08); color:var(--ink);}
+
+/* ============================================================
+   SLIDES — SCROLL MODE (default): a normal long page, one slide
+   per full-viewport-ish section, scrollable top to bottom.
+============================================================ */
+.deck{padding-top:64px;}
+.slide{
+  min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+  padding:70px 24px 60px; position:relative; overflow:hidden;
+}
+.slide-inner{max-width:760px; margin:0 auto; width:100%; position:relative; z-index:2;}
+.slide-kicker{font-family:var(--font-mono); font-size:11px; letter-spacing:2.5px; text-transform:uppercase; color:var(--tan); margin-bottom:14px;}
+.slide h1{font-family:var(--font-display); font-weight:600; font-size:clamp(28px,5vw,46px); line-height:1.05; margin:0 0 18px; letter-spacing:-0.5px;}
+.slide h1 em{font-style:italic; color:var(--teal-bright); font-weight:500;}
+.slide p.lead{font-size:16px; line-height:1.6; color:var(--muted); max-width:56ch; margin:0 0 22px;}
+.slide-num{position:absolute; top:70px; right:24px; font-family:var(--font-mono); font-size:12px; color:var(--muted); z-index:2;}
+.bg-glow{
+  position:absolute; inset:0; z-index:1;
+  background:
+    radial-gradient(90% 70% at 15% -10%, rgba(31,158,158,0.35), transparent 55%),
+    radial-gradient(80% 60% at 100% 10%, rgba(63,127,224,0.22), transparent 55%),
+    radial-gradient(70% 50% at 50% 110%, rgba(51,181,126,0.14), transparent 60%);
+}
+
+.checklist{list-style:none; margin:0; padding:0;}
+.checklist li{display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); font-size:14.5px;}
+.checklist li:last-child{border-bottom:0;}
+.checklist .b{color:var(--teal-bright); font-weight:700;}
+
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+@media (max-width:640px){.grid2{grid-template-columns:1fr;}}
+
+.tag{display:inline-block; font-size:10px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; padding:4px 10px; border-radius:999px; background:rgba(201,166,107,0.16); color:var(--tan); margin-bottom:10px;}
+
+/* ---------------- FLYWHEEL (Slide 3) ---------------- */
+.flywheel-wrap{display:flex; justify-content:center; margin:10px 0 6px;}
+.fw-node-label{font-family:var(--font-mono); font-size:10.5px; font-weight:700; fill:var(--ink); text-anchor:middle;}
+.fw-node-circle{fill:var(--card-2); stroke:var(--teal-bright); stroke-width:2;}
+
+/* ---------------- REVENUE STACK (Slide 7) ---------------- */
+.rev-stack{display:flex; flex-direction:column; gap:0; margin:8px 0 18px;}
+.rev-item{display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px dashed var(--line);}
+.rev-plus{font-family:var(--font-mono); color:var(--muted); font-size:13px; text-align:center; padding:2px 0;}
+.rev-dot{width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; flex:0 0 auto;}
+.rev-title{font-weight:700; font-size:14px;}
+.rev-sub{font-size:12px; color:var(--muted); margin-top:2px;}
+.rev-total{
+  margin-top:6px; padding:16px; border-radius:var(--radius-sm); text-align:center; font-family:var(--font-display);
+  font-weight:600; font-size:17px; background:linear-gradient(120deg, rgba(31,158,158,0.16), rgba(63,127,224,0.14));
+  border:1px solid rgba(63,127,224,0.3);
+}
+.disclaimer{font-size:11.5px; color:var(--muted); margin-top:14px; padding:12px 14px; border-left:2px solid var(--tan); background:rgba(201,166,107,0.06);}
+
+/* ---------------- PRODUCT (Slide 4) ---------------- */
+.phone-frame{
+  width:230px; height:460px; border-radius:32px; border:6px solid #0f2e30; background:#000;
+  margin:0 auto 20px; overflow:hidden; box-shadow:var(--shadow); position:relative;
+}
+.phone-frame iframe{width:100%; height:100%; border:0;}
+.feature-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;}
+.feature-chip{background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 14px; font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:8px;}
+
+/* ---------------- VIDEO EMBED (Slide 5) ---------------- */
+.video-frame{position:relative; padding-top:56.25%; border-radius:var(--radius); overflow:hidden; border:1px solid var(--line); margin:14px 0 18px;}
+.video-frame iframe{position:absolute; inset:0; width:100%; height:100%; border:0;}
+.proof-links{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+.proof-links a{font-size:13px; color:var(--teal-bright); font-weight:600; display:flex; align-items:center; gap:8px; text-decoration:none;}
+
+/* ---------------- $50K ALLOCATION (Slide 8) ---------------- */
+.alloc-bar{display:flex; width:100%; height:34px; border-radius:10px; overflow:hidden; margin:14px 0 16px; border:1px solid var(--line);}
+.alloc-legend{display:flex; flex-direction:column; gap:8px;}
+.alloc-row{display:flex; align-items:center; gap:10px; font-size:13px;}
+.alloc-swatch{width:12px; height:12px; border-radius:4px; flex:0 0 auto;}
+.alloc-amt{margin-left:auto; font-family:var(--font-mono); font-weight:700;}
+.alloc-total{margin-top:12px; padding-top:12px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-family:var(--font-display); font-weight:600; font-size:16px;}
+
+/* ---------------- PROGRESSION (Slide 9) ---------------- */
+.prog{display:flex; flex-direction:column; gap:0;}
+.prog-step{padding:16px 0 16px 30px; border-left:2px solid var(--line); position:relative;}
+.prog-step:last-child{border-left:2px solid transparent;}
+.prog-step::before{content:""; position:absolute; left:-7px; top:18px; width:12px; height:12px; border-radius:50%; background:var(--teal-bright); box-shadow:0 0 0 4px rgba(31,158,158,0.18);}
+.prog-label{font-family:var(--font-mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--tan); margin-bottom:4px;}
+.prog-body{font-size:14px; line-height:1.5; color:var(--ink);}
+
+/* ---------------- FINANCIAL CHART (Slide 10) ---------------- */
+.fin-legend{display:flex; gap:16px; margin:10px 0 4px; font-size:11.5px; flex-wrap:wrap;}
+.fin-legend span{display:flex; align-items:center; gap:6px;}
+.fin-legend i{width:10px; height:10px; border-radius:3px; display:inline-block;}
+
+/* ---------------- KPI GRID (Slide 11) ---------------- */
+.kpi-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+@media (max-width:520px){.kpi-grid{grid-template-columns:1fr;}}
+.kpi-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:13px 15px; font-size:13px; display:flex; align-items:center; gap:10px;}
+.kpi-card .n{font-family:var(--font-mono); color:var(--teal-bright); font-weight:700;}
+
+/* ---------------- CLOSE (Slide 12) ---------------- */
+.close-slide{text-align:center;}
+.close-slide h1{font-size:clamp(26px,6vw,42px);}
+.close-tagline{font-family:var(--font-display); font-style:italic; font-size:19px; color:var(--muted); margin-top:20px;}
+
+/* ============================================================
+   PITCH MODE — fullscreen, one slide at a time
+============================================================ */
+body.pitch-active{overflow:hidden;}
+body.pitch-active .deck{padding-top:0;}
+body.pitch-active .slide{
+  position:fixed; inset:0; min-height:100vh; padding:80px 24px 90px;
+  opacity:0; pointer-events:none; transform:translateX(24px);
+  transition:opacity .4s var(--ease), transform .4s var(--ease);
+  justify-content:center;
+}
+body.pitch-active .slide.pm-active{opacity:1; pointer-events:auto; transform:translateX(0); z-index:5;}
+body.pitch-active .slide.pm-prevdir{transform:translateX(-24px);}
+
+.pm-nav{
+  position:fixed; bottom:0; left:0; right:0; z-index:90; display:none;
+  align-items:center; justify-content:space-between; gap:14px;
+  padding:14px 20px calc(14px + env(safe-area-inset-bottom));
+  background:linear-gradient(0deg, rgba(3,20,26,0.95), rgba(3,20,26,0.6)); backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+}
+body.pitch-active .pm-nav{display:flex;}
+.pm-navbtn{width:44px; height:44px; border-radius:50%; background:rgba(246,250,249,0.08); border:1px solid var(--line); font-size:18px; display:flex; align-items:center; justify-content:center;}
+.pm-navbtn:disabled{opacity:0.3; pointer-events:none;}
+.pm-dots{display:flex; gap:6px; flex:1; justify-content:center; flex-wrap:wrap;}
+.pm-dot{width:8px; height:8px; border-radius:50%; background:var(--line); border:0;}
+.pm-dot.pm-dot-active{background:var(--teal-bright); width:20px; border-radius:5px;}
+.pm-counter{font-family:var(--font-mono); font-size:12px; color:var(--muted); min-width:40px; text-align:right;}
+</style>
+</head>
+<body>
+
+<div class="controlbar">
+  <div class="brandmark">
+    <!-- ============================================================
+         REPLACE ME: drop the real FRESH DETROIT logo file in and
+         swap this div for <img id="brandLogo" src="logo.png" alt="FRESH DETROIT">.
+         No logo asset was found in the FreshDetroit repo, the Food
+         repo, or your uploads — this is a placeholder wordmark only,
+         built so nothing else in this deck depends on it.
+    ============================================================ -->
+    <div class="mark">FD</div>
+    <div class="word">FRESH <em>DETROIT</em></div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-ghost" id="pmToggle" onclick="togglePitchMode()">▶ Pitch Mode</button>
+    <a class="btn btn-outline" href="index.html">← Back to app</a>
+  </div>
+</div>
+
+<div class="deck" id="deck">
+
+  <!-- SLIDE 1 — COVER -->
+  <section class="slide" data-slide="1">
+    <div class="bg-glow"></div>
+    <div class="slide-inner" style="text-align:center;">
+      <div style="display:flex; justify-content:center; margin-bottom:26px;">
+        <div class="mark" style="width:64px; height:64px; font-size:24px; border-radius:16px;">FD</div>
+      </div>
+      <div class="slide-kicker" style="justify-content:center; display:flex;">DETROIT, MICHIGAN</div>
+      <h1>FRESH <em>DETROIT</em></h1>
+      <p class="lead" style="margin:0 auto 26px; text-align:center;">Detroit grows. Detroit shares. Detroit eats.</p>
+      <div class="tag" style="font-size:12px; padding:8px 16px;">$50,000 Growth &amp; Launch Proposal</div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2 — THE PROBLEM -->
+  <section class="slide" data-slide="2">
+    <div class="bg-glow"></div>
+    <div class="slide-num">02 / 12</div>
+    <div class="slide-inner">
+      <div class="slide-kicker">The Problem</div>
+      <h1>Good food can have a <em>short window.</em></h1>
+      <ul class="checklist">
+        <li><span class="b">→</span> Local growers produce genuinely valuable food.</li>
+        <li><span class="b">→</span> Harvest timing creates urgency — produce doesn't wait.</li>
+        <li><span class="b">→</span> Consumers often don't know what's available nearby, right now.</li>
+        <li><span class="b">→</span> Small growers may not have sophisticated digital sales tools.</li>
+        <li><span class="b">→</span> Usable food can become waste when supply and demand aren't efficiently connected.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- SLIDE 3 — THE SOLUTION -->
+  <section class="slide" data-slide="3">
+    <div class="bg-glow"></div>
+    <div class="slide-num">03 / 12</div>
+    <div class="slide-inner">
+      <div class="slide-kicker">The Solution</div>
+      <h1>FRESH DETROIT connects <em>the harvest</em> to the neighborhood.</h1>
+      <div class="flywheel-wrap">
+        <svg viewBox="0 0 400 400" width="320" height="320">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--teal-bright)"/></marker>
+          </defs>
+          <g stroke="var(--teal-bright)" stroke-width="1.6" marker-end="url(#arrow)" opacity="0.7">
+            <line x1="200" y1="52" x2="308" y2="103"/>
+            <line x1="315.7" y1="107.7" x2="339" y2="223"/>
+            <line x1="344.3" y1="232.9" x2="270" y2="323"/>
+            <line x1="264.2" y1="333.3" x2="141" y2="333.3"/>
+            <line x1="135.8" y1="333.3" x2="61" y2="238"/>
+            <line x1="55.7" y1="232.9" x2="80" y2="114"/>
+            <line x1="84.3" y1="107.7" x2="192" y2="58"/>
+          </g>
+          <g>
+            <circle class="fw-node-circle" cx="200" cy="52" r="30"/>
+            <circle class="fw-node-circle" cx="315.7" cy="107.7" r="30"/>
+            <circle class="fw-node-circle" cx="344.3" cy="232.9" r="30"/>
+            <circle class="fw-node-circle" cx="264.2" cy="333.3" r="30"/>
+            <circle class="fw-node-circle" cx="135.8" cy="333.3" r="30"/>
+            <circle class="fw-node-circle" cx="55.7" cy="232.9" r="30"/>
+            <circle class="fw-node-circle" cx="84.3" cy="107.7" r="30"/>
+          </g>
+          <g class="fw-node-label">
+            <text x="200" y="48">GROW</text>
+            <text x="315.7" y="104">HARVEST</text>
+            <text x="344.3" y="229">LIST</text>
+            <text x="264.2" y="330">DISCOVER</text>
+            <text x="135.8" y="330">BUY /</text>
+            <text x="135.8" y="342">CLAIM</text>
+            <text x="55.7" y="229">EARN</text>
+            <text x="84.3" y="104">GROW</text>
+            <text x="84.3" y="115">MORE</text>
+          </g>
+        </svg>
+      </div>
+      <p class="lead" style="margin:0 auto; text-align:center;">Not simply a directory — a local food <strong style="color:var(--ink)">commerce and discovery</strong> platform.</p>
+    </div>
+  </section>
+
+  <!-- SLIDE 4 — THE PRODUCT -->
+  <section class="slide" data-slide="4">
+    <div class="bg-glow"></div>
+    <div class="slide-num">04 / 12</div>
+    <div class="slide-inner">
+      <div class="slide-kicker">The Product</div>
+      <h1>A working app, <em>today.</em></h1>
+      <div class="phone-frame">
+        <iframe src="https://fresh-detroit.vercel.app/" title="FRESH DETROIT live app" loading="lazy"></iframe>
+      </div>
+      <p class="lead" style="margin:0 auto 8px; text-align:center;">Live product — not a mockup. <a href="https://fresh-detroit.vercel.app/" target="_blank" style="color:var(--teal-bright); font-weight:600;">Open in a new tab →</a></p>
+      <div class="feature-grid">
+        <div class="feature-chip">🥬 Marketplace</div>
+        <div class="feature-chip">🌿 Garden Buddy</div>
+        <div class="feature-chip">⚡ Fresh Alerts</div>
+        <div class="feature-chip">🍽️ Food Finder</div>
+        <div class="feature-chip">👤 Grower profiles</div>
+        <div class="feature-chip">🧺 Harvest listings</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 5 — BRAND / PROOF OF CONCEPT -->
+  <section class="slide" data-slide="5">
+    <div class="bg-glow"></div>
+    <div class="slide-num">05 / 12</div>
+    <div class="slide-inner">
+      <div class="slide-kicker">Proof of Concept</div>
+      <h1>We are not starting with <em>a blank page.</em></h1>
+      <div class="video-frame">
+        <iframe src="https://www.youtube.com/embed/iQ4GqAu27RU" title="Fresh Detroit: No Food Left Behind" allowfullscreen loading="lazy"></iframe>
+      </div>
+      <div style="font-size:12.5px; color:var(--muted); margin-bottom:14px;">"Fresh Detroit: No Food Left Behind" — existing brand marketing asset.</div>
+      <div class="proof-links">
+        <a href="https://github.com/fairefaretravels/FreshDetroit" target="_blank">↗ Existing app &amp; repo — fairefaretravels/FreshDetroit</a>
+        <a href="https://github.com/fairefaretravels/Food" target="_blank">↗ Existing Food Finder repo — fairefaretravels/Food</a>
+        <a href="https://food-beta-brown.vercel.app/" target="_blank">↗ Food Finder AI — live</a>
+        <a href="https://skinmanager.vercel.app/" target="_blank">↗ Skin Manager — related product, same team</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 6 — WHY DETROIT -->
+  <section class="slide" data-slide="6">
+    <div class="bg-glow"></div>
+    <div class="slide-num">06 / 12</div>
+    <div class="slide-inner">
+      <div class="slide-kicker">Why Detroit</div>
+      <h1>Detroit is <em>our first market.</em></h1>
+      <p class="lead">Detroit provides the initial environment for testing the platform with local growers, gardens, consumers, and food businesses — an established urban agriculture and community gardening ecosystem, and the market this grant opportunity is built around.</p>
+      <p class="lead">The objective is a repeatable Detroit pilot model — proven with real growers and real transactions — that can inform expansion into additional cities later. No other markets are claimed or committed to at this stage.</p>
+    </div>
+  </section>
+
+  <!-- SLIDE 7 — HOW FRESH DETROIT MAKES MONEY -->
+  <section class="slide" data-slide="7">
+    <div class="bg-glow"></div>
+    <div class="slide-num">07 / 12</div>
+    <div class="slide-inner">
+      <div class="slide-kicker">Business Model</div>
+      <h1>How FRESH DETROIT <em>makes money.</em></h1>
+      <div class="rev-stack">
+        <div class="rev-item"><div class="rev-dot" style="background:rgba(31,158,158,0.18); color:var(--teal-bright);">🧾</div><div><div class="rev-title">Marketplace transaction fees</div><div class="rev-sub">Illustrative planning assumption: 8% per transaction</div></div></div>
+        <div class="rev-plus">+</div>
+        <div class="rev-item"><div class="rev-dot" style="background:rgba(63,127,224,0.18); color:var(--blue-bright);">🌿</div><div><div class="rev-title">Grower Pro subscription</div><div class="rev-sub">Illustrative planning assumption: $19/month</div></div></div>
+        <div class="rev-plus">+</div>
+        <div class="rev-item"><div class="rev-dot" style="background:rgba(51,181,126,0.18); color:var(--green-bright);">⭐</div><div><div class="rev-title">Featured listings</div><div class="rev-sub">Illustrative planning assumption: $10 per promoted listing</div></div></div>
+        <div class="rev-plus">+</div>
+        <div class="rev-item"><div class="rev-dot" style="background:rgba(201,166,107,0.2); color:var(--tan);">📣</div><div><div class="rev-title">Local business advertising</div><div class="rev-sub">Sponsored placement for approved local restaurants &amp; food businesses</div></div></div>
+        <div class="rev-plus">+</div>
+        <div class="rev-item"><div class="rev-dot" style="background:rgba(246,250,249,0.1); color:var(--ink);">🔮</div><div><div class="rev-title">Future premium consumer features</div><div class="rev-sub">Optional, added later — not part of Year 1 revenue</div></div></div>
+      </div>
+      <div class="rev-total">= Diversified recurring revenue</div>
+      <div class="disclaimer">Pricing above are initial planning assumptions, not finalized market pricing — each will be validated during the Detroit pilot. Diversification matters because the platform should not depend entirely on transaction fees.</div>
+    </div>
+  </section>
+
+  <!-- SLIDE 8 — THE $50,000 -->
+  <section class="slide" data-slide="8">
+    <div class="bg-glow"></div>
+    <div class="slide-num">08 / 12</div>
+    <div class="slide-inner">
+      <div class="slide-kicker">Use of Funds</div>
+      <h1>Exactly where the <em>$50,000</em> goes.</h1>
+      <div class="alloc-bar" id="allocBar"></div>
+      <div class="alloc-legend" id="allocLegend"></div>
+      <div class="alloc-total"><span>TOTAL</span><span class="mono">$50,000</span></div>
+    </div>
+  </section>
+
+  <!-- SLIDE 9 — WHAT THE $50K UNLOCKS -->
+  <section class="slide" data-slide="9">
+    <div class="bg-glow"></div>
+    <div class="slide-num">09 / 12</div>
+    <div class="slide-inner">
+      <div class="slide-kicker">What $50K Unlocks</div>
+      <h1>From prototype to <em>validated business.</em></h1>
+      <div class="prog">
+        <div class="prog-step"><div class="prog-label">Current</div><div class="prog-body">Working prototype + brand + concept, already live.</div></div>
+        <div class="prog-step"><div class="prog-label">With $50K</div><div class="prog-body">Production-ready platform, Detroit grower pilot, consumer acquisition, security/backend hardening, revenue validation, operational systems.</div></div>
+        <div class="prog-step"><div class="prog-label">Next</div><div class="prog-body">A repeatable Detroit business model, proven with real growers and real transactions.</div></div>
+        <div class="prog-step"><div class="prog-label">Future</div><div class="prog-body">Expansion into additional markets — informed by what the Detroit pilot actually shows.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 10 — FINANCIAL PROJECTION -->
+  <section class="slide" data-slide="10">
+    <div class="bg-glow"></div>
+    <div class="slide-num">10 / 12</div>
+    <div class="slide-inner">
+      <div class="slide-kicker">Financial Projection</div>
+      <h1>Year 1 is the <em>pilot.</em></h1>
+      <div class="fin-legend">
+        <span><i style="background:var(--teal-bright);"></i>Revenue</span>
+        <span><i style="background:var(--blue-bright);"></i>Operating expenses</span>
+        <span><i style="background:var(--tan);"></i>Operating result</span>
+      </div>
+      <div id="finChart"></div>
+      <div class="disclaimer">Year 2 and Year 3 are <strong>scenario targets, not guarantees</strong> — the financial model will be recalibrated using actual pilot data. The Year 1 loss is intentional: it's the Detroit validation/pilot period, and this grant provides the launch runway to get through it responsibly.</div>
+    </div>
+  </section>
+
+  <!-- SLIDE 11 — WHAT WE WILL MEASURE -->
+  <section class="slide" data-slide="11">
+    <div class="bg-glow"></div>
+    <div class="slide-num">11 / 12</div>
+    <div class="slide-inner">
+      <div class="slide-kicker">Pilot KPIs</div>
+      <h1>How we'll know <em>it's working.</em></h1>
+      <div class="kpi-grid">
+        <div class="kpi-card"><span class="n">①</span> Growers onboarded</div>
+        <div class="kpi-card"><span class="n">②</span> Active growers</div>
+        <div class="kpi-card"><span class="n">③</span> Harvest listings created</div>
+        <div class="kpi-card"><span class="n">④</span> Listings claimed / purchased</div>
+        <div class="kpi-card"><span class="n">⑤</span> Marketplace GMV</div>
+        <div class="kpi-card"><span class="n">⑥</span> Average order value</div>
+        <div class="kpi-card"><span class="n">⑦</span> Grower Pro conversion</div>
+        <div class="kpi-card"><span class="n">⑧</span> Consumer retention</div>
+        <div class="kpi-card"><span class="n">⑨</span> Repeat purchases</div>
+        <div class="kpi-card"><span class="n">⑩</span> Customer acquisition cost</div>
+        <div class="kpi-card"><span class="n">⑪</span> Revenue per grower</div>
+        <div class="kpi-card"><span class="n">⑫</span> Food/harvest volume moved</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 12 — THE CLOSE -->
+  <section class="slide" data-slide="12">
+    <div class="bg-glow"></div>
+    <div class="slide-num">12 / 12</div>
+    <div class="slide-inner close-slide">
+      <h1>$50,000 can turn a working concept<br>into a <em>validated Detroit business.</em></h1>
+      <div style="display:flex; justify-content:center; margin:34px 0 18px;">
+        <div class="mark" style="width:54px; height:54px; font-size:20px; border-radius:14px;">FD</div>
+      </div>
+      <div class="brandmark" style="justify-content:center;"><div class="word" style="font-size:22px;">FRESH <em>DETROIT</em></div></div>
+      <div class="close-tagline">Detroit grows. Detroit shares. Detroit eats.</div>
+    </div>
+  </section>
+
+</div>
+
+<!-- PITCH MODE NAV -->
+<div class="pm-nav">
+  <button class="pm-navbtn" id="pmPrev" onclick="pmPrev()">‹</button>
+  <div class="pm-dots" id="pmDots"></div>
+  <div class="pm-counter" id="pmCounter">1/12</div>
+  <button class="pm-navbtn" id="pmNext" onclick="pmNext()">›</button>
+</div>
+
+<script>
+/* ============================================================
+   $50K ALLOCATION — rendered from data so the bar + legend + total
+   always stay in sync (single source of truth, not hand-drawn twice)
+============================================================ */
+const ALLOCATION = [
+  {label:"Product development", amt:18000, color:"var(--teal-bright)"},
+  {label:"Detroit pilot & field operations", amt:7500, color:"var(--blue-bright)"},
+  {label:"Marketing & customer acquisition", amt:6500, color:"var(--green-bright)"},
+  {label:"UX/UI & brand assets", amt:5000, color:"var(--tan)"},
+  {label:"Firebase/backend/security", amt:5000, color:"#8fb6e6"},
+  {label:"Legal/accounting/insurance", amt:3000, color:"#c98f6b"},
+  {label:"Software/hosting/tools", amt:2500, color:"#7fd6a8"},
+  {label:"Contingency", amt:2500, color:"rgba(246,250,249,0.35)"}
+];
+const ALLOC_TOTAL = ALLOCATION.reduce((s,a)=>s+a.amt,0);
+
+function renderAllocation(){
+  const bar = document.getElementById("allocBar");
+  const legend = document.getElementById("allocLegend");
+  bar.innerHTML = ALLOCATION.map(a=>`<div style="width:${(a.amt/ALLOC_TOTAL*100).toFixed(2)}%; background:${a.color};"></div>`).join("");
+  legend.innerHTML = ALLOCATION.map(a=>`
+    <div class="alloc-row">
+      <div class="alloc-swatch" style="background:${a.color};"></div>
+      <div>${a.label}</div>
+      <div class="alloc-amt">$${a.amt.toLocaleString()}</div>
+    </div>`).join("");
+}
+
+/* ============================================================
+   FINANCIAL PROJECTION CHART — grouped bars, SVG, from data.
+   Figures come directly from the brief. Y2/Y3 are explicitly
+   scenario targets, not guarantees (see disclaimer under chart).
+============================================================ */
+const FIN = [
+  {year:"Year 1", revenue:37000, opex:54000, result:-17000},
+  {year:"Year 2", revenue:120000, opex:95000, result:25000},
+  {year:"Year 3", revenue:300000, opex:210000, result:90000}
+];
+function renderFinChart(){
+  const w = 640, h = 300, padL = 50, padB = 40, padT = 10;
+  const maxVal = 320000, minVal = -30000;
+  const scaleY = v => h - padB - ((v - minVal) / (maxVal - minVal)) * (h - padB - padT);
+  const groupW = (w - padL - 20) / FIN.length;
+  const barW = 22, gap = 6;
+  let bars = "", labels = "";
+  const zeroY = scaleY(0);
+  FIN.forEach((f,i)=>{
+    const gx = padL + i*groupW + groupW/2;
+    const vals = [
+      {v:f.revenue, color:"var(--teal-bright)"},
+      {v:f.opex, color:"var(--blue-bright)"},
+      {v:f.result, color:"var(--tan)"}
+    ];
+    vals.forEach((item,j)=>{
+      const x = gx - (barW*1.5 + gap) + j*(barW+gap);
+      const y = item.v >= 0 ? scaleY(item.v) : zeroY;
+      const barH = Math.abs(scaleY(item.v) - zeroY);
+      bars += `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(barH,2)}" rx="4" fill="${item.color}"/>`;
+      bars += `<text x="${x+barW/2}" y="${item.v>=0 ? y-6 : y+barH+14}" font-family="JetBrains Mono" font-size="9.5" fill="var(--muted)" text-anchor="middle">${item.v<0?"-":""}$${Math.abs(Math.round(item.v/1000))}K</text>`;
+    });
+    labels += `<text x="${gx}" y="${h-14}" font-family="Inter" font-weight="700" font-size="12" fill="var(--ink)" text-anchor="middle">${f.year}</text>`;
+  });
+  document.getElementById("finChart").innerHTML = `
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:auto;">
+      <line x1="${padL}" y1="${zeroY}" x2="${w-10}" y2="${zeroY}" stroke="var(--line)" stroke-width="1"/>
+      ${bars}
+      ${labels}
+    </svg>`;
+}
+
+/* ============================================================
+   PITCH MODE
+============================================================ */
+const slides = Array.from(document.querySelectorAll(".slide"));
+let pmIndex = 0;
+let pitchOn = false;
+
+function togglePitchMode(){
+  pitchOn = !pitchOn;
+  document.body.classList.toggle("pitch-active", pitchOn);
+  document.getElementById("pmToggle").textContent = pitchOn ? "✕ Exit Pitch Mode" : "▶ Pitch Mode";
+  if(pitchOn){
+    pmIndex = 0;
+    updatePitchView();
+    if(document.documentElement.requestFullscreen){
+      document.documentElement.requestFullscreen().catch(()=>{});
+    }
+  } else {
+    if(document.fullscreenElement && document.exitFullscreen){ document.exitFullscreen().catch(()=>{}); }
+  }
+}
+function updatePitchView(){
+  slides.forEach((s,i)=>{
+    s.classList.toggle("pm-active", i===pmIndex);
+    s.classList.toggle("pm-prevdir", i<pmIndex);
+  });
+  document.getElementById("pmPrev").disabled = pmIndex===0;
+  document.getElementById("pmNext").disabled = pmIndex===slides.length-1;
+  document.getElementById("pmCounter").textContent = (pmIndex+1)+"/"+slides.length;
+  document.querySelectorAll(".pm-dot").forEach((d,i)=>d.classList.toggle("pm-dot-active", i===pmIndex));
+}
+function pmNext(){ if(pmIndex<slides.length-1){ pmIndex++; updatePitchView(); } }
+function pmPrev(){ if(pmIndex>0){ pmIndex--; updatePitchView(); } }
+function pmGoTo(i){ pmIndex=i; updatePitchView(); }
+
+document.getElementById("pmDots").innerHTML = slides.map((_,i)=>`<button class="pm-dot" onclick="pmGoTo(${i})"></button>`).join("");
+
+document.addEventListener("keydown", e=>{
+  if(!pitchOn) return;
+  if(e.key==="ArrowRight" || e.key===" ") pmNext();
+  if(e.key==="ArrowLeft") pmPrev();
+  if(e.key==="Escape") togglePitchMode();
+});
+let touchStartX = null;
+document.addEventListener("touchstart", e=>{ if(pitchOn) touchStartX = e.touches[0].clientX; }, {passive:true});
+document.addEventListener("touchend", e=>{
+  if(!pitchOn || touchStartX===null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if(Math.abs(dx) > 50){ dx < 0 ? pmNext() : pmPrev(); }
+  touchStartX = null;
+}, {passive:true});
+
+renderAllocation();
+renderFinChart();
+</script>
+</body>
+</html>
