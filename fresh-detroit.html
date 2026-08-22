@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>FRESH DETROIT — Detroit grows. Detroit shares. Detroit eats.</title>
+<meta name="description" content="A local Detroit food marketplace connecting growers with consumers — grow, harvest, list, discover, buy, cook.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<!-- Firebase (compat SDK — no build step needed, same pattern as fairefaretravels/Food) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   Display: Fraunces (soft-edged serif, printed-seed-packet warmth
+   without going terracotta/cliché — pairs with deep forest green)
+   Body/UI: Inter — quiet, legible workhorse
+   Data/mono: JetBrains Mono — used only for prices, stats, counts,
+   the "instrument panel" register of the grower dashboard
+============================================================ */
+:root{
+  --forest:#12372A;
+  --forest-2:#0e2c21;
+  --green:#2F6B4F;
+  --green-bright:#3e8f68;
+  --sage:#789C7A;
+  --tan:#C9A66B;
+  --cream:#F5F0E6;
+  --dark:#08130E;
+  --ink:#eef3ec;
+  --muted:#9db3a4;
+  --line:rgba(245,240,230,0.10);
+  --card:#0d1f17;
+  --card-2:#112a1f;
+  --gold:#d8b45f;
+  --danger:#c96b4b;
+  --radius:18px;
+  --radius-sm:12px;
+  --shadow:0 20px 50px rgba(0,0,0,0.45);
+  --ease:cubic-bezier(.22,.9,.32,1);
+  --font-display:'Fraunces',serif;
+  --font-body:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important;}
+}
+body{
+  margin:0;
+  background:var(--dark);
+  color:var(--ink);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:78px;
+}
+button,input,select,textarea{font:inherit; color:inherit;}
+button{cursor:pointer;}
+a{color:inherit; text-decoration:none;}
+img{max-width:100%; display:block;}
+::selection{background:var(--tan); color:var(--dark);}
+.hidden{display:none !important;}
+.mono{font-family:var(--font-mono);}
+
+/* Scrollbar tidy */
+::-webkit-scrollbar{height:0; width:0;}
+
+/* ============================================================
+   TOP BAR
+============================================================ */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px;
+  background:linear-gradient(180deg, rgba(8,19,14,0.96), rgba(8,19,14,0.86));
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.brand{
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:19px;
+  letter-spacing:0.2px;
+  display:flex; align-items:center; gap:8px;
+}
+.brand .dot{width:7px; height:7px; border-radius:50%; background:var(--tan); box-shadow:0 0 10px var(--tan);}
+.role-switch{
+  display:flex; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:3px; gap:2px;
+}
+.role-switch button{
+  border:0; background:transparent; color:var(--muted);
+  font-size:12px; font-weight:600; padding:7px 12px; border-radius:999px;
+  transition:all .25s var(--ease);
+}
+.role-switch button.active{background:var(--green); color:var(--cream);}
+
+/* ============================================================
+   VIEWS
+============================================================ */
+.view{display:none; animation:viewIn .35s var(--ease);}
+.view.active{display:block;}
+@keyframes viewIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+/* ---------- HERO ---------- */
+.hero{
+  position:relative;
+  padding:54px 20px 40px;
+  overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 15% -10%, rgba(47,107,79,0.55), transparent 55%),
+    radial-gradient(100% 80% at 100% 0%, rgba(201,166,107,0.18), transparent 60%),
+    var(--dark);
+}
+.hero-eyebrow{
+  font-family:var(--font-mono); font-size:11px; letter-spacing:2.5px; text-transform:uppercase;
+  color:var(--tan); margin-bottom:14px; opacity:0; animation:fadeUp .6s var(--ease) .1s forwards;
+}
+.hero h1{
+  font-family:var(--font-display); font-weight:600; font-size:44px; line-height:1.02;
+  margin:0 0 16px; letter-spacing:-0.5px;
+  opacity:0; animation:fadeUp .7s var(--ease) .2s forwards;
+}
+.hero h1 em{font-style:italic; color:var(--sage); font-weight:500;}
+.hero p{
+  font-size:15.5px; line-height:1.55; color:var(--muted); max-width:36ch; margin:0 0 26px;
+  opacity:0; animation:fadeUp .7s var(--ease) .32s forwards;
+}
+@keyframes fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+.hero-actions{display:flex; gap:10px; flex-wrap:wrap; opacity:0; animation:fadeUp .7s var(--ease) .44s forwards;}
+.btn{
+  border:0; border-radius:999px; padding:14px 22px; font-weight:700; font-size:14px;
+  letter-spacing:0.3px; transition:transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--cream); color:var(--forest-2);}
+.btn-primary:hover{box-shadow:0 8px 24px rgba(245,240,230,0.18);}
+.btn-outline{background:transparent; color:var(--cream); border:1.5px solid rgba(245,240,230,0.35);}
+.btn-outline:hover{border-color:var(--cream);}
+.btn-block{width:100%; text-align:center;}
+.btn-sm{padding:9px 16px; font-size:12.5px;}
+
+/* ---------- SECTION SHELL ---------- */
+.section{padding:30px 18px 6px;}
+.section-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;}
+.section-title{font-family:var(--font-display); font-size:20px; font-weight:600; display:flex; align-items:center; gap:8px;}
+.section-link{font-size:12px; color:var(--sage); font-weight:600;}
+
+/* ---------- HORIZONTAL RAIL ---------- */
+.rail{
+  display:flex; gap:12px; overflow-x:auto; padding-bottom:6px; margin:0 -18px; padding-left:18px; padding-right:18px;
+  scroll-snap-type:x proximity;
+}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  overflow:hidden; transition:transform .3s var(--ease), border-color .3s var(--ease);
+  scroll-snap-align:start;
+}
+.card:hover{transform:translateY(-4px); border-color:rgba(201,166,107,0.35);}
+.produce-card{width:150px; flex:0 0 auto;}
+.produce-img{
+  height:110px; display:flex; align-items:center; justify-content:center; font-size:46px;
+  background:linear-gradient(160deg, var(--card-2), var(--forest-2));
+}
+.produce-body{padding:10px 12px 12px;}
+.produce-name{font-weight:700; font-size:13.5px; margin-bottom:4px;}
+.produce-meta{display:flex; justify-content:space-between; font-size:11px; color:var(--muted);}
+.tag{
+  display:inline-block; font-size:10px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase;
+  padding:3px 8px; border-radius:999px; margin-bottom:6px;
+}
+.tag-share{background:rgba(62,143,104,0.22); color:#7fd6a8;}
+.tag-discount{background:rgba(216,180,95,0.2); color:var(--gold);}
+.tag-sell{background:rgba(120,156,122,0.2); color:var(--sage);}
+
+/* ---------- NEAR YOU LIST CARDS ---------- */
+.listing-row{
+  display:flex; gap:12px; padding:12px; margin-bottom:10px; cursor:pointer;
+}
+.listing-thumb{
+  width:64px; height:64px; border-radius:12px; flex:0 0 auto; font-size:28px;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(160deg, var(--card-2), var(--forest-2));
+}
+.listing-info{flex:1; min-width:0;}
+.listing-title{font-weight:700; font-size:14.5px; margin-bottom:2px;}
+.listing-sub{font-size:12px; color:var(--muted);}
+.listing-price{font-family:var(--font-mono); font-weight:700; font-size:14px; color:var(--tan); white-space:nowrap;}
+
+/* ---------- ALERT / SPOTLIGHT ---------- */
+.alert-card{
+  background:linear-gradient(120deg, rgba(216,180,95,0.14), rgba(47,107,79,0.14));
+  border:1px solid rgba(216,180,95,0.3); border-radius:var(--radius); padding:16px;
+  margin-bottom:12px; display:flex; gap:12px; align-items:center;
+  animation:pulseGlow 3.5s ease-in-out infinite;
+}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 0 rgba(216,180,95,0);} 50%{box-shadow:0 0 24px rgba(216,180,95,0.12);}}
+.alert-emoji{font-size:30px;}
+.alert-body{flex:1;}
+.alert-title{font-weight:700; font-size:13.5px; margin-bottom:3px;}
+.alert-sub{font-size:12px; color:var(--muted);}
+
+.spotlight{
+  border-radius:var(--radius); overflow:hidden; border:1px solid var(--line);
+  background:linear-gradient(160deg, var(--card-2), var(--forest-2));
+  padding:20px; position:relative;
+}
+.spotlight-tag{font-family:var(--font-mono); font-size:10.5px; color:var(--sage); letter-spacing:1.5px; text-transform:uppercase;}
+.spotlight h3{font-family:var(--font-display); font-size:22px; margin:6px 0 6px;}
+.spotlight p{font-size:13px; color:var(--muted); line-height:1.5; margin:0 0 14px; max-width:42ch;}
+
+/* ---------- STATS ---------- */
+.stat-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:18px;}
+.stat-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px;}
+.stat-val{font-family:var(--font-mono); font-weight:700; font-size:24px; color:var(--cream); font-variant-numeric:tabular-nums;}
+.stat-label{font-size:11px; color:var(--muted); margin-top:2px;}
+
+/* ---------- TIMELINE (signature element) ---------- */
+.timeline{display:flex; align-items:center; overflow-x:auto; padding:6px 2px 14px; gap:0;}
+.tl-stage{display:flex; flex-direction:column; align-items:center; flex:0 0 auto; width:64px; position:relative;}
+.tl-dot{
+  width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:16px; background:var(--card); border:1.5px solid var(--line); transition:all .3s var(--ease);
+}
+.tl-stage.done .tl-dot{background:var(--green); border-color:var(--green-bright);}
+.tl-stage.current .tl-dot{background:var(--tan); border-color:var(--gold); animation:tlPulse 1.6s ease-in-out infinite;}
+@keyframes tlPulse{0%,100%{box-shadow:0 0 0 0 rgba(216,180,95,0.5);} 50%{box-shadow:0 0 0 7px rgba(216,180,95,0);}}
+.tl-label{font-size:9.5px; color:var(--muted); margin-top:5px; text-align:center;}
+.tl-stage.done .tl-label, .tl-stage.current .tl-label{color:var(--cream);}
+.tl-line{flex:1; height:2px; background:var(--line); min-width:14px; margin-top:-19px;}
+.tl-line.done{background:var(--green-bright);}
+
+/* ---------- BOTTOM NAV ---------- */
+.bottom-nav{
+  position:fixed; bottom:0; left:0; right:0; z-index:50;
+  display:flex; background:rgba(8,19,14,0.97); backdrop-filter:blur(12px);
+  border-top:1px solid var(--line); padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+}
+.nav-item{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:transparent; border:0;
+  padding:6px 2px; color:var(--muted); font-size:10px; font-weight:600; position:relative;
+}
+.nav-item .icon{font-size:19px; transition:transform .25s var(--ease);}
+.nav-item.active{color:var(--cream);}
+.nav-item.active .icon{transform:translateY(-2px);}
+.nav-item .badge{
+  position:absolute; top:0; right:22%; width:7px; height:7px; border-radius:50%; background:var(--tan);
+}
+
+/* ---------- MARKETPLACE ---------- */
+.search-bar{
+  display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line);
+  border-radius:999px; padding:12px 16px; margin:16px 18px 12px;
+}
+.search-bar input{background:transparent; border:0; outline:0; color:var(--ink); width:100%; font-size:14px;}
+.filter-row{display:flex; gap:8px; overflow-x:auto; padding:0 18px 16px; margin:0 -18px; padding-left:18px;}
+.chip{
+  flex:0 0 auto; padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--card);
+  font-size:12.5px; font-weight:600; color:var(--muted); transition:all .2s var(--ease);
+}
+.chip.active{background:var(--green); border-color:var(--green-bright); color:var(--cream);}
+.grid-listings{padding:0 18px; display:flex; flex-direction:column; gap:0;}
+.grid-listings .listing-row{background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm);}
+
+/* ---------- MODAL / SHEET ---------- */
+.sheet-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:flex; align-items:flex-end;
+  opacity:0; pointer-events:none; transition:opacity .3s var(--ease);
+}
+.sheet-overlay.open{opacity:1; pointer-events:auto;}
+.sheet{
+  background:var(--dark); border-radius:24px 24px 0 0; width:100%; max-height:88vh; overflow-y:auto;
+  padding:8px 20px 28px; transform:translateY(100%); transition:transform .38s var(--ease);
+  border-top:1px solid var(--line);
+}
+.sheet-overlay.open .sheet{transform:translateY(0);}
+.sheet-handle{width:38px; height:4px; background:var(--line); border-radius:99px; margin:10px auto 16px;}
+.sheet-close{position:absolute; top:16px; right:18px; background:var(--card); border:1px solid var(--line); width:32px; height:32px; border-radius:50%; font-size:15px; z-index:2;}
+.listing-hero{height:170px; border-radius:var(--radius); display:flex; align-items:center; justify-content:center; font-size:64px; background:linear-gradient(160deg, var(--card-2), var(--forest-2)); margin-bottom:16px;}
+.detail-title{font-family:var(--font-display); font-size:24px; font-weight:600; margin-bottom:4px;}
+.detail-row{display:flex; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
+.detail-row span:first-child{color:var(--muted);}
+.detail-actions{display:flex; gap:10px; margin-top:18px;}
+
+/* ---------- FORMS ---------- */
+.field{margin-bottom:14px;}
+.field label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px; font-weight:600;}
+.field input, .field select, .field textarea{
+  width:100%; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm);
+  padding:12px 14px; font-size:14px; outline:0; transition:border-color .2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--sage);}
+.step-dots{display:flex; gap:5px; margin:8px 0 18px;}
+.step-dots span{height:4px; flex:1; border-radius:99px; background:var(--line);}
+.step-dots span.active{background:var(--tan);}
+.pill-select{display:flex; gap:8px;}
+.pill-select button{flex:1; padding:12px; border-radius:var(--radius-sm); border:1px solid var(--line); background:var(--card); font-weight:700; font-size:12.5px;}
+.pill-select button.active{background:var(--green); border-color:var(--green-bright);}
+
+/* ---------- GARDEN / FOOD FINDER GENERIC ---------- */
+.crop-item{display:flex; align-items:center; gap:12px; padding:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:10px;}
+.crop-emoji{font-size:26px; width:40px; text-align:center;}
+.crop-info{flex:1;}
+.crop-name{font-weight:700; font-size:14px;}
+.crop-status{font-size:11px; color:var(--muted); margin-top:2px; text-transform:capitalize;}
+.status-pill{font-size:10px; font-weight:700; padding:3px 9px; border-radius:99px; text-transform:uppercase; letter-spacing:0.3px;}
+.status-seedling{background:rgba(120,156,122,0.2); color:var(--sage);}
+.status-growing{background:rgba(47,107,79,0.25); color:var(--green-bright);}
+.status-ready{background:rgba(216,180,95,0.22); color:var(--gold);}
+.status-listed{background:rgba(93,140,199,0.2); color:#8fb6e6;}
+.status-sold{background:rgba(122,122,122,0.2); color:#bbb;}
+
+.recipe-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px;}
+.recipe-title{font-family:var(--font-display); font-weight:600; font-size:17px; margin-bottom:8px;}
+.ing-chip{display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:6px 11px; border-radius:99px; margin:0 6px 6px 0; font-weight:600;}
+.ing-have{background:rgba(62,143,104,0.2); color:#8fe0ae;}
+.ing-missing{background:rgba(201,107,75,0.18); color:#f0a385;}
+.missing-alert{
+  margin-top:10px; padding:12px; border-radius:var(--radius-sm); background:rgba(201,107,75,0.1);
+  border:1px solid rgba(201,107,75,0.28); font-size:12.5px;
+}
+
+.toast-wrap{position:fixed; top:70px; left:0; right:0; z-index:200; display:flex; justify-content:center; pointer-events:none;}
+.toast{
+  background:var(--cream); color:var(--forest-2); padding:12px 20px; border-radius:99px; font-weight:700; font-size:13px;
+  box-shadow:var(--shadow); transform:translateY(-20px); opacity:0; transition:all .35s var(--ease);
+}
+.toast.show{transform:translateY(0); opacity:1;}
+
+.skel{background:linear-gradient(90deg, var(--card) 25%, var(--card-2) 37%, var(--card) 63%); background-size:400% 100%; animation:skel 1.4s ease infinite;}
+@keyframes skel{0%{background-position:100% 0;} 100%{background-position:0 0;}}
+
+.empty-state{text-align:center; padding:40px 20px; color:var(--muted);}
+.empty-state .e-emoji{font-size:34px; margin-bottom:10px;}
+
+@media (min-width:640px){
+  .bottom-nav{max-width:480px; left:50%; transform:translateX(-50%); border-radius:20px 20px 0 0;}
+  body{padding-bottom:90px;}
+}
+</style>
+</head>
+<body>
+
+<div class="toast-wrap"><div class="toast" id="toast"></div></div>
+
+<!-- ============================================================ TOP BAR ============================================================ -->
+<div class="topbar">
+  <div class="brand"><span class="dot"></span>FRESH <span style="color:var(--sage)">DETROIT</span></div>
+  <div class="role-switch">
+    <button id="roleConsumerBtn" class="active" onclick="setRole('consumer')">Consumer</button>
+    <button id="roleGrowerBtn" onclick="setRole('grower')">Grower</button>
+  </div>
+</div>
+
+<!-- ============================================================ HOME ============================================================ -->
+<div class="view active" id="view-home">
+  <div class="hero">
+    <div class="hero-eyebrow">DETROIT, MICHIGAN</div>
+    <h1>Detroit grows.<br>Detroit shares.<br><em>Detroit eats.</em></h1>
+    <p>Discover fresh food from Detroit growers before it leaves the neighborhood.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary" onclick="go('marketplace')">Shop Fresh</button>
+      <button class="btn btn-outline" onclick="go('garden')">List Your Harvest</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><div class="section-title">🔥 Fresh Now</div><div class="section-link" onclick="go('marketplace')">See all</div></div>
+    <div class="rail" id="freshNowRail"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><div class="section-title">📍 Fresh Near You</div><div class="section-link" onclick="go('marketplace')">See all</div></div>
+    <div id="nearYouList"></div>
+  </div>
+
+  <div class="section" id="alertsHomeSection">
+    <div class="section-head"><div class="section-title">⚡ Fresh Alerts</div></div>
+    <div id="alertsHomeList"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><div class="section-title">🌱 Grower Spotlight</div></div>
+    <div class="spotlight">
+      <div class="spotlight-tag">Eastside Detroit</div>
+      <h3>Maple Street Urban Garden</h3>
+      <p>Three raised beds and a hoop house on a reclaimed vacant lot, run by the Odom family since 2019. Tomatoes, collards, and peppers grown a half mile from where they're sold.</p>
+      <button class="btn btn-outline btn-sm" onclick="go('marketplace')">View Grower</button>
+    </div>
+  </div>
+
+  <div class="section" style="padding-bottom:24px;">
+    <div class="section-head"><div class="section-title">🍽️ What Can You Make?</div><div class="section-link" onclick="go('food')">Open Food Finder</div></div>
+    <div id="homeRecipeTeaser"></div>
+  </div>
+</div>
+
+<!-- ============================================================ MARKETPLACE ============================================================ -->
+<div class="view" id="view-marketplace">
+  <div class="section" style="padding-top:20px;">
+    <div class="section-title" style="margin-bottom:2px;">Fresh Detroit Marketplace</div>
+  </div>
+  <div class="search-bar"><span>🔎</span><input placeholder="What are you looking for?" oninput="renderMarketplace(this.value)"></div>
+  <div class="filter-row" id="typeFilterRow">
+    <button class="chip active" data-f="all" onclick="setFilter(this,'all')">All</button>
+    <button class="chip" data-f="share" onclick="setFilter(this,'share')">🟢 Free</button>
+    <button class="chip" data-f="discount" onclick="setFilter(this,'discount')">🟡 Discounted</button>
+    <button class="chip" data-f="sell" onclick="setFilter(this,'sell')">🔵 For Sale</button>
+  </div>
+  <div class="grid-listings" id="marketplaceList"></div>
+</div>
+
+<!-- ============================================================ ALERTS ============================================================ -->
+<div class="view" id="view-alerts">
+  <div class="section" style="padding-top:20px;">
+    <div class="section-title">⚡ Fresh Alerts</div>
+    <p style="color:var(--muted); font-size:13px; margin-top:4px;">New harvests and drops from growers you follow.</p>
+  </div>
+  <div class="section" id="alertsFullList"></div>
+</div>
+
+<!-- ============================================================ FOOD FINDER ============================================================ -->
+<div class="view" id="view-food">
+  <div class="section" style="padding-top:20px;">
+    <div class="section-title">🍽️ Food Finder</div>
+    <p style="color:var(--muted); font-size:13px; margin-top:4px;">What can you make with what's fresh right now?</p>
+  </div>
+  <div class="section" id="foodFinderBody"></div>
+</div>
+
+<!-- ============================================================ FARMS ============================================================ -->
+<div class="view" id="view-farms">
+  <div class="section" style="padding-top:20px;">
+    <div class="section-head">
+      <div>
+        <div class="section-title">🌾 Detroit Farms</div>
+        <p style="color:var(--muted); font-size:13px; margin-top:4px;">Community gardens, urban farms, and school gardens across Detroit.</p>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="openAddFarm()">+ Add farm</button>
+    </div>
+  </div>
+  <div class="section" style="padding-bottom:30px;" id="farmsList"></div>
+</div>
+
+<!-- ============================================================ MY FRESH (profile) ============================================================ -->
+<div class="view" id="view-profile">
+  <div class="section" style="padding-top:20px;">
+    <div class="section-title">My Fresh</div>
+  </div>
+  <div class="section">
+    <div class="section-head"><div class="section-title" style="font-size:15px;">Claims &amp; Orders</div></div>
+    <div id="myOrdersList"></div>
+  </div>
+  <div class="section">
+    <div class="section-head"><div class="section-title" style="font-size:15px;">Saved</div></div>
+    <div id="mySavedList"></div>
+  </div>
+</div>
+
+<!-- ============================================================ GARDEN BUDDY ============================================================ -->
+<div class="view" id="view-garden">
+  <div class="section" style="padding-top:20px;">
+    <div class="section-title">🌿 Garden Buddy</div>
+    <p style="color:var(--muted); font-size:13px; margin-top:4px;" id="gardenSubtitle">Your growing season, tracked.</p>
+  </div>
+
+  <!-- Shown only if this device hasn't registered a grower profile yet -->
+  <div class="section" id="growerOnboarding">
+    <div class="spotlight">
+      <h3>Become a Grower</h3>
+      <p>Register your garden to start tracking crops, harvests, and listings on Fresh Detroit.</p>
+      <div class="field"><label>Business / garden name</label><input id="ob_businessName" placeholder="e.g. Maple Street Urban Garden"></div>
+      <div class="field"><label>Description</label><input id="ob_description" placeholder="A few raised beds on a reclaimed lot..."></div>
+      <div class="field"><label>Neighborhood</label><input id="ob_neighborhood" placeholder="e.g. Eastside"></div>
+      <button class="btn btn-primary btn-block" onclick="becomeGrower()">Create Grower Profile</button>
+    </div>
+  </div>
+
+  <div id="growerDashboard" class="hidden">
+    <div class="section">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-val" id="statCrops">0</div><div class="stat-label">Crops</div></div>
+        <div class="stat-card"><div class="stat-val" id="statReady">0</div><div class="stat-label">Ready to harvest</div></div>
+        <div class="stat-card"><div class="stat-val mono" id="statRevenue">$0</div><div class="stat-label">Claimed revenue</div></div>
+        <div class="stat-card"><div class="stat-val" id="statOrders">0</div><div class="stat-label">New claims</div></div>
+      </div>
+    </div>
+
+    <div class="section" id="harvestAlertSection"></div>
+
+    <div class="section">
+      <div class="section-head"><div class="section-title" style="font-size:16px;">Harvest Timeline</div></div>
+      <div class="timeline" id="harvestTimeline"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="section-title" style="font-size:16px;">🌱 Crops</div><button class="btn btn-outline btn-sm" onclick="openAddCrop()">+ Add crop</button></div>
+      <div id="cropsList"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="section-title" style="font-size:16px;">🧺 Harvested — ready to list</div></div>
+      <div id="harvestsList"></div>
+    </div>
+
+    <div class="section" style="padding-bottom:30px;">
+      <div class="section-head"><div class="section-title" style="font-size:16px;">📬 Claims on your listings</div></div>
+      <div id="claimsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ BOTTOM NAV ============================================================ -->
+<div class="bottom-nav" id="bottomNav">
+  <button class="nav-item active" data-view="home" onclick="go('home')"><span class="icon">🏠</span>Home</button>
+  <button class="nav-item" data-view="marketplace" onclick="go('marketplace')"><span class="icon">🥬</span>Fresh</button>
+  <button class="nav-item" data-view="alerts" onclick="go('alerts')"><span class="icon">⚡</span>Alerts<span class="badge hidden" id="alertBadge"></span></button>
+  <button class="nav-item" data-view="food" onclick="go('food')"><span class="icon">🍽️</span>Food</button>
+  <button class="nav-item" data-view="farms" onclick="go('farms')"><span class="icon">🌾</span>Farms</button>
+  <button class="nav-item" data-view="profile" onclick="go('profile')"><span class="icon">👤</span>Profile</button>
+  <button class="nav-item hidden" id="gardenNavBtn" data-view="garden" onclick="go('garden')"><span class="icon">🌿</span>Garden</button>
+</div>
+
+<!-- ============================================================ LISTING DETAIL SHEET ============================================================ -->
+<div class="sheet-overlay" id="listingSheet" onclick="if(event.target===this) closeSheet('listingSheet')">
+  <div class="sheet" style="position:relative;">
+    <button class="sheet-close" onclick="closeSheet('listingSheet')">✕</button>
+    <div class="sheet-handle"></div>
+    <div id="listingSheetBody"></div>
+  </div>
+</div>
+
+<!-- ============================================================ POST HARVEST SHEET ============================================================ -->
+<div class="sheet-overlay" id="postSheet" onclick="if(event.target===this) closeSheet('postSheet')">
+  <div class="sheet" style="position:relative;">
+    <button class="sheet-close" onclick="closeSheet('postSheet')">✕</button>
+    <div class="sheet-handle"></div>
+    <div id="postSheetBody"></div>
+  </div>
+</div>
+
+<!-- ============================================================ ADD CROP SHEET ============================================================ -->
+<div class="sheet-overlay" id="cropSheet" onclick="if(event.target===this) closeSheet('cropSheet')">
+  <div class="sheet" style="position:relative;">
+    <button class="sheet-close" onclick="closeSheet('cropSheet')">✕</button>
+    <div class="sheet-handle"></div>
+    <div style="font-family:var(--font-display); font-size:19px; font-weight:600; margin-bottom:14px;">Add a crop</div>
+    <div class="field"><label>Crop name</label><input id="newCropName" placeholder="e.g. Peppers"></div>
+    <div class="field"><label>Expected harvest (lbs)</label><input id="newCropYield" type="number" placeholder="e.g. 15"></div>
+    <div class="field"><label>Days until harvest</label><input id="newCropDays" type="number" placeholder="e.g. 14"></div>
+    <button class="btn btn-primary btn-block" onclick="addCrop()">Add to Garden</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   FRESH DETROIT — walking skeleton
+   In-memory + localStorage demo state, shaped to map directly
+   onto real collections later: crops, food_listings, orders,
+   claims, favorites, fresh_alerts, recipes.
+   Ported logic (not code) from:
+     - fairefaretravels/skinmanager → crop/status pipeline, revenue calc
+     - fairefaretravels/Food        → ingredient-match recipe engine
+============================================================ */
+
+const EMOJI = {Tomatoes:"🍅",Basil:"🌿",Peppers:"🌶️","Collard Greens":"🥬",Strawberries:"🍓",Cucumbers:"🥒",Eggs:"🥚",Lettuce:"🥗"};
+
+function load(key, fallback){ try{ const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; }catch(e){ return fallback; } }
+function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+
+/* ============================================================
+   FIREBASE
+   Paste your own project's config below (Firebase console →
+   Project settings → General → Your apps → Web app).
+   This key is safe to expose client-side; access is enforced
+   by the Firestore rules in SETUP.md, not by hiding the key.
+============================================================ */
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAkbNmC-6ttXVLt_DaM6vK5pxzNtnoaVVI",
+  authDomain: "food-finder-ai-8ac84.firebaseapp.com",
+  projectId: "food-finder-ai-8ac84",
+  storageBucket: "food-finder-ai-8ac84.firebasestorage.app",
+  messagingSenderId: "140217083748",
+  appId: "1:140217083748:web:3447409e077dae3beffc71",
+  measurementId: "G-J4KBJ781PF"
+};
+
+let db = null;
+let auth = null;
+let firebaseReady = false;
+try{
+  if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    firebaseReady = true;
+  }
+}catch(e){ console.error("Firebase init failed:", e); }
+
+/* ============================================================
+   FRESH DETROIT — FD_ SCHEMA (additive; does not touch Food's
+   appReviews, or this prototype's old crops/food_listings/orders
+   collections — those are left exactly as they were)
+============================================================ */
+const fd_usersRef        = firebaseReady ? db.collection("fd_users") : null;
+const fd_growersRef      = firebaseReady ? db.collection("fd_growers") : null;
+const fd_gardensRef      = firebaseReady ? db.collection("fd_gardens") : null;
+const fd_cropsRef        = firebaseReady ? db.collection("fd_crops") : null;
+const fd_harvestsRef     = firebaseReady ? db.collection("fd_harvests") : null;
+const fd_listingsRef     = firebaseReady ? db.collection("fd_listings") : null;
+const fd_claimsRef       = firebaseReady ? db.collection("fd_claims") : null;
+const fd_alertsRef       = firebaseReady ? db.collection("fd_alerts") : null;
+const fd_notificationsRef= firebaseReady ? db.collection("fd_notifications") : null;
+
+const DEMO_LISTINGS = [
+  {productName:"Tomatoes", description:"Vine-ripened Detroit tomatoes — DEMO listing", listingType:"sell", price:2, quantity:5, unit:"lbs", neighborhood:"Corktown", emoji:"🍅", isDemo:true},
+  {productName:"Collard Greens", description:"Fresh-cut collards — DEMO listing", listingType:"share", price:0, quantity:6, unit:"bunches", neighborhood:"Eastside", emoji:"🥬", isDemo:true},
+  {productName:"Basil", description:"Aromatic basil — DEMO listing", listingType:"sell", price:3, quantity:8, unit:"bunches", neighborhood:"Corktown", emoji:"🌿", isDemo:true},
+  {productName:"Peppers", description:"Mixed sweet peppers — DEMO listing", listingType:"discount", price:2.5, quantity:12, unit:"lbs", neighborhood:"Southwest Detroit", emoji:"🌶️", isDemo:true},
+  {productName:"Cucumbers", description:"Crisp garden cucumbers — DEMO listing", listingType:"sell", price:1.5, quantity:10, unit:"lbs", neighborhood:"Northend", emoji:"🥒", isDemo:true}
+];
+
+let state = {
+  role: load("fd_role","consumer"),        // UI view toggle only — NOT the authenticated fd_users.role
+  uid: null,
+  myGrower: null,      // this device's fd_growers doc, once created ({id, ...data})
+  myGarden: null,      // this device's default fd_gardens doc
+  crops: [],           // this grower's fd_crops
+  harvests: [],        // this grower's fd_harvests
+  listings: [],        // all PUBLISHED fd_listings (marketplace)
+  myClaims: [],         // claims I've made as a buyer
+  incomingClaims: [],   // claims against my own listings (grower view)
+  alerts: [],
+  saved: load("fd_saved", []),
+  claimedIngredients: load("fd_claimed", []),
+  gardenOrders: 0,
+  gardenRevenue: 0
+};
+
+const RECIPES = [
+  {name:"Tomato Basil Pasta", needs:["Tomatoes","Basil"], emoji:"🍝"},
+  {name:"Fresh Detroit Salsa", needs:["Tomatoes","Peppers"], emoji:"🌮"},
+  {name:"Garden Collard Skillet", needs:["Collard Greens"], emoji:"🥬"}
+];
+
+function persist(){
+  save("fd_role", state.role); save("fd_saved", state.saved); save("fd_claimed", state.claimedIngredients);
+}
+
+/* ============================================================
+   AUTH + FD_ SCHEMA INIT
+   Every visitor is signed in anonymously in the background so
+   they have a stable uid — no signup screen, browsing is never
+   blocked on it. Becoming a "grower" (fd_growers doc) is a
+   separate, explicit opt-in step (see becomeGrower()).
+============================================================ */
+async function ensureUserProfile(uid){
+  const ref = fd_usersRef.doc(uid);
+  const snap = await ref.get();
+  if(!snap.exists){
+    await ref.set({
+      displayName: "Detroit Neighbor",
+      email: null,
+      role: "consumer",
+      isGrower: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+}
+
+async function loadMyGrowerProfile(uid){
+  const snap = await fd_growersRef.where("ownerUid","==",uid).limit(1).get();
+  if(snap.empty){ state.myGrower = null; state.myGarden = null; return; }
+  state.myGrower = {id:snap.docs[0].id, ...snap.docs[0].data()};
+  const gSnap = await fd_gardensRef.where("growerId","==",state.myGrower.id).limit(1).get();
+  state.myGarden = gSnap.empty ? null : {id:gSnap.docs[0].id, ...gSnap.docs[0].data()};
+}
+
+async function seedDemoListingsIfEmpty(){
+  try{
+    const snap = await fd_listingsRef.where("status","==","published").limit(1).get();
+    if(!snap.empty) return;
+    const batch = db.batch();
+    DEMO_LISTINGS.forEach(l => batch.set(fd_listingsRef.doc(), {
+      growerId: "demo",
+      harvestId: null,
+      productName: l.productName,
+      description: l.description,
+      quantity: l.quantity,
+      unit: l.unit,
+      listingType: l.listingType,
+      price: l.listingType==="share" ? 0 : l.price,
+      status: "published",
+      pickupInstructions: "Local pickup — details on claim",
+      neighborhood: l.neighborhood,
+      city: "Detroit",
+      state: "MI",
+      imageUrl: l.emoji,
+      isDemo: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }));
+    await batch.commit();
+  }catch(e){ console.error("Demo seeding failed:", e); }
+}
+
+function attachGrowerListeners(){
+  if(!state.myGrower) return;
+  fd_cropsRef.where("growerId","==",state.myGrower.id).onSnapshot(snap=>{
+    state.crops = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderGarden();
+  }, e=>console.error("fd_crops listener:", e));
+
+  fd_harvestsRef.where("growerId","==",state.myGrower.id).onSnapshot(snap=>{
+    state.harvests = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderGarden();
+  }, e=>console.error("fd_harvests listener:", e));
+
+  fd_claimsRef.where("growerId","==",state.myGrower.id).onSnapshot(snap=>{
+    state.incomingClaims = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    state.gardenOrders = state.incomingClaims.length;
+    state.gardenRevenue = state.incomingClaims.reduce((sum,c)=>{
+      const l = state.listings.find(x=>x.id===c.listingId);
+      return sum + (l ? (Number(l.price)||0) * (Number(c.quantity)||0) : 0);
+    }, 0);
+    renderGarden();
+  }, e=>console.error("fd_claims (incoming) listener:", e));
+}
+
+async function initFirestore(){
+  if(!firebaseReady){
+    showToast("Add your Firebase config to connect Fresh Detroit to live data");
+    renderHome();
+    return;
+  }
+
+  auth.onAuthStateChanged(async user=>{
+    if(!user){
+      auth.signInAnonymously().catch(e=>{ console.error("Anonymous sign-in failed:", e); showToast("Couldn't connect — check Firebase Auth settings"); });
+      return;
+    }
+    state.uid = user.uid;
+    try{
+      await ensureUserProfile(user.uid);
+      await loadMyGrowerProfile(user.uid);
+      attachGrowerListeners();
+      await seedDemoListingsIfEmpty();
+      fd_claimsRef.where("buyerUid","==",user.uid).onSnapshot(snap=>{
+        state.myClaims = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+        renderProfile();
+      }, e=>console.error("fd_claims (mine) listener:", e));
+    }catch(e){ console.error("Init failed:", e); showToast("Couldn't reach Firestore — check your config/rules"); }
+    renderGarden(); renderHome(); renderProfile();
+  });
+
+  fd_listingsRef.where("status","==","published").onSnapshot(snap=>{
+    state.listings = snap.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    renderHome(); renderMarketplace(); renderAlerts(); renderProfile();
+  }, e=>console.error("fd_listings listener:", e));
+
+  fd_alertsRef.orderBy("createdAt","desc").limit(20).onSnapshot(snap=>{
+    state.alerts = snap.docs.map(d=>({id:d.id, ...d.data()}));
+  }, e=>console.error("fd_alerts listener:", e));
+}
+
+/* ---------------- NAV ---------------- */
+function go(view){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-"+view).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active", n.dataset.view===view));
+  window.scrollTo({top:0, behavior:"smooth"});
+  if(view==="marketplace") renderMarketplace();
+  if(view==="food") renderFoodFinder();
+  if(view==="garden") renderGarden();
+  if(view==="alerts") renderAlerts();
+  if(view==="profile") renderProfile();
+  if(view==="farms") renderFarmsPage();
+  if(view==="home") renderHome();
+}
+
+function setRole(role){
+  state.role = role; persist();
+  document.getElementById("roleConsumerBtn").classList.toggle("active", role==="consumer");
+  document.getElementById("roleGrowerBtn").classList.toggle("active", role==="grower");
+  document.getElementById("gardenNavBtn").classList.toggle("hidden", role!=="grower");
+  go(role==="grower" ? "garden" : "home");
+}
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove("show"), 2400);
+}
+
+function openSheet(id){ document.getElementById(id).classList.add("open"); }
+function closeSheet(id){ document.getElementById(id).classList.remove("open"); }
+
+/* ---------------- HOME ---------------- */
+function produceCardHTML(l){
+  const tagClass = l.listingType==="share"?"tag-share":l.listingType==="discount"?"tag-discount":"tag-sell";
+  const tagText = l.listingType==="share"?"Free":l.listingType==="discount"?"Discount":"For sale";
+  return `<div class="card produce-card" onclick="openListing('${l.id}')">
+    <div class="produce-img">${l.imageUrl||"🌱"}</div>
+    <div class="produce-body">
+      <span class="tag ${tagClass}">${tagText}</span>
+      <div class="produce-name">${l.productName}${l.isDemo?" · DEMO":""}</div>
+      <div class="produce-meta"><span>${l.neighborhood||"Detroit"}</span><span class="mono">${l.price?("$"+Number(l.price).toFixed(2)):"Free"}</span></div>
+    </div>
+  </div>`;
+}
+
+function listingRowHTML(l){
+  const priceText = l.listingType==="share" ? "Free" : "$"+Number(l.price).toFixed(2);
+  return `<div class="card listing-row" onclick="openListing('${l.id}')">
+    <div class="listing-thumb">${l.imageUrl||"🌱"}</div>
+    <div class="listing-info">
+      <div class="listing-title">${l.productName}</div>
+      <div class="listing-sub">${l.neighborhood||"Detroit"} · ${l.quantity} ${l.unit}${l.isDemo?" · DEMO":""}</div>
+    </div>
+    <div class="listing-price">${priceText}</div>
+  </div>`;
+}
+
+function renderHome(){
+  const rail = document.getElementById("freshNowRail");
+  rail.innerHTML = state.listings.slice(0,8).map(produceCardHTML).join("");
+
+  const near = document.getElementById("nearYouList");
+  const sorted = [...state.listings].sort((a,b)=>a.distance-b.distance).slice(0,3);
+  near.innerHTML = sorted.map(listingRowHTML).join("");
+
+  renderHomeAlerts();
+
+  const teaser = document.getElementById("homeRecipeTeaser");
+  if(state.claimedIngredients.length){
+    const have = state.claimedIngredients;
+    const match = RECIPES.find(r=>r.needs.some(n=>have.includes(n)));
+    if(match){
+      teaser.innerHTML = `<div class="recipe-card" onclick="go('food')">
+        <div style="font-size:12px; color:var(--sage); font-weight:700; margin-bottom:6px;">YOU HAVE ${have.join(", ").toUpperCase()}</div>
+        <div class="recipe-title">${match.emoji} ${match.name}</div>
+        <div style="font-size:12.5px; color:var(--muted);">Tap to see the full recipe and what's missing.</div>
+      </div>`;
+    } else { teaser.innerHTML = emptyState("🍽️","Claim something fresh to see recipe ideas."); }
+  } else {
+    teaser.innerHTML = emptyState("🍽️","Claim or buy something fresh to see what you can make.");
+  }
+}
+
+function emptyState(emoji,text){
+  return `<div class="empty-state"><div class="e-emoji">${emoji}</div><div>${text}</div></div>`;
+}
+
+function renderHomeAlerts(){
+  const list = document.getElementById("alertsHomeList");
+  const alerts = getAlerts();
+  document.getElementById("alertsHomeSection").classList.toggle("hidden", alerts.length===0);
+  list.innerHTML = alerts.slice(0,2).map(a=>`
+    <div class="alert-card">
+      <div class="alert-emoji">${a.emoji}</div>
+      <div class="alert-body"><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div>
+      <button class="btn btn-primary btn-sm" onclick="${a.action}">Get it</button>
+    </div>`).join("");
+}
+
+function getAlerts(){
+  return state.alerts.slice(0,10).map(a=>({
+    emoji: "⚡",
+    title: a.message || `New: ${a.productName}`,
+    sub: `${a.neighborhood||"Detroit"}${a.listingId?" · tap to view":""}`,
+    action: a.listingId ? `openListing('${a.listingId}')` : ""
+  }));
+}
+
+function renderAlerts(){
+  const badge = document.getElementById("alertBadge");
+  const alerts = getAlerts();
+  badge.classList.toggle("hidden", alerts.length===0);
+  document.getElementById("alertsFullList").innerHTML = alerts.length ? alerts.map(a=>`
+    <div class="alert-card">
+      <div class="alert-emoji">${a.emoji}</div>
+      <div class="alert-body"><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div>
+      <button class="btn btn-primary btn-sm" onclick="${a.action}">Get it</button>
+    </div>`).join("") : emptyState("⚡","No fresh alerts yet.");
+}
+
+/* ---------------- MARKETPLACE ---------------- */
+let activeFilter = "all";
+function setFilter(btn, f){
+  activeFilter = f;
+  document.querySelectorAll("#typeFilterRow .chip").forEach(c=>c.classList.remove("active"));
+  btn.classList.add("active");
+  renderMarketplace();
+}
+function renderMarketplace(query){
+  query = (query||"").toLowerCase();
+  let list = state.listings.filter(l => (activeFilter==="all" || l.listingType===activeFilter) && l.productName.toLowerCase().includes(query));
+  const el = document.getElementById("marketplaceList");
+  el.innerHTML = list.length ? list.map(listingRowHTML).join("") : emptyState("🥬","No listings match yet.");
+}
+
+function openListing(id){
+  const l = state.listings.find(x=>x.id===id);
+  if(!l) return;
+  const tagClass = l.listingType==="share"?"tag-share":l.listingType==="discount"?"tag-discount":"tag-sell";
+  const tagText = l.listingType==="share"?"Free":l.listingType==="discount"?"Discount":"For sale";
+  const actionLabel = l.listingType==="share" ? "Claim" : "Claim / Buy";
+  document.getElementById("listingSheetBody").innerHTML = `
+    <div class="listing-hero">${l.imageUrl||"🌱"}</div>
+    <span class="tag ${tagClass}">${tagText}</span>
+    <div class="detail-title">Detroit ${l.productName}${l.isDemo?" (DEMO)":""}</div>
+    <div style="color:var(--muted); font-size:13px; margin-bottom:10px;">${l.description||("Freshly harvested "+l.productName.toLowerCase())}</div>
+    <div class="detail-row"><span>Location</span><span>${l.neighborhood||"Detroit"}, MI</span></div>
+    <div class="detail-row"><span>Quantity</span><span>${l.quantity} ${l.unit}</span></div>
+    <div class="detail-row"><span>Price</span><span class="mono">${l.listingType==="share"?"Free":"$"+Number(l.price).toFixed(2)}</span></div>
+    <div class="detail-row"><span>Pickup</span><span>${l.pickupInstructions||"Local pickup, today"}</span></div>
+    <div class="detail-actions">
+      <button class="btn btn-primary" style="flex:1" onclick="claimListing('${l.id}')">${actionLabel}</button>
+      <button class="btn btn-outline" onclick="saveListing('${l.id}')">Save</button>
+    </div>`;
+  openSheet("listingSheet");
+}
+
+async function claimListing(id){
+  const l = state.listings.find(x=>x.id===id);
+  if(!l || !firebaseReady) { if(!firebaseReady) showToast("Connect Firebase to claim listings"); return; }
+  if(!state.uid){ showToast("Still connecting — try again in a moment"); return; }
+  try{
+    const claimRef = await fd_claimsRef.add({
+      listingId: l.id,
+      buyerUid: state.uid,
+      growerId: l.growerId,
+      quantity: l.quantity,
+      status: "pending",
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    // notify the grower — skip for seeded DEMO listings, which have no real owner
+    if(l.growerId && l.growerId !== "demo"){
+      await fd_notificationsRef.add({
+        toGrowerId: l.growerId,
+        type: "claim",
+        listingId: l.id,
+        claimId: claimRef.id,
+        message: `Someone claimed ${l.productName}`,
+        read: false,
+        createdAt: Date.now()
+      });
+    }
+    if(!state.claimedIngredients.includes(l.productName)) state.claimedIngredients.push(l.productName);
+    state.myClaims.push({id:claimRef.id, listingId:l.id, status:"pending"});
+    persist();
+    closeSheet("listingSheet");
+    showToast(l.listingType==="share" ? `Claimed ${l.productName} ✓ — pending grower confirmation` : `Claim sent for ${l.productName} ✓`);
+  }catch(e){ console.error("claimListing failed:", e); showToast("Couldn't complete that — try again"); }
+}
+
+function saveListing(id){
+  if(!state.saved.includes(id)) state.saved.push(id);
+  persist();
+  showToast("Saved to My Fresh");
+}
+
+/* ---------------- PROFILE ---------------- */
+function renderProfile(){
+  const orders = document.getElementById("myOrdersList");
+  const myClaims = state.myClaims || [];
+  orders.innerHTML = myClaims.length ? myClaims.map(c=>{
+    const l = state.listings.find(x=>x.id===c.listingId);
+    const name = l ? l.productName : "(listing no longer published)";
+    const emoji = l ? (l.imageUrl||"🥬") : "🥬";
+    return `<div class="card listing-row" style="cursor:default;">
+      <div class="listing-thumb">${emoji}</div>
+      <div class="listing-info"><div class="listing-title">${name}</div><div class="listing-sub">Status: ${c.status}</div></div>
+      <div class="listing-price">${l && l.listingType==="share"?"Free":(l?"$"+Number(l.price).toFixed(2):"")}</div>
+    </div>`;
+  }).join("") : emptyState("🧾","No claims yet.");
+
+  const savedEl = document.getElementById("mySavedList");
+  const savedListings = state.listings.filter(l=>state.saved.includes(l.id));
+  savedEl.innerHTML = savedListings.length ? savedListings.map(listingRowHTML).join("") : emptyState("🔖","Nothing saved yet.");
+}
+
+/* ---------------- FOOD FINDER ---------------- */
+function renderFoodFinder(){
+  const have = state.claimedIngredients;
+  const body = document.getElementById("foodFinderBody");
+  if(!have.length){
+    body.innerHTML = emptyState("🍅","Claim or buy fresh produce and Food Finder will suggest meals automatically.");
+    return;
+  }
+  let html = `<div style="font-size:12px; color:var(--sage); font-weight:700; margin-bottom:12px;">YOU HAVE ${have.join(", ").toUpperCase()}</div>`;
+  const matches = RECIPES.filter(r=>r.needs.some(n=>have.includes(n)));
+  html += matches.map(r=>{
+    const missing = r.needs.filter(n=>!have.includes(n));
+    const chips = r.needs.map(n=>`<span class="ing-chip ${have.includes(n)?"ing-have":"ing-missing"}">${have.includes(n)?"✓":"✕"} ${n}</span>`).join("");
+    let missingBlock = "";
+    if(missing.length){
+      const missingListing = state.listings.find(l=>l.productName===missing[0]);
+      if(missingListing){
+        missingBlock = `<div class="missing-alert">🌿 <strong>You're missing ${missing.join(", ")}.</strong><br>
+          Fresh ${missing[0]} available in ${missingListing.neighborhood||"Detroit"}.
+          <div style="margin-top:8px;"><button class="btn btn-primary btn-sm" onclick="openListing('${missingListing.id}')">View Fresh Listing</button></div></div>`;
+      } else {
+        missingBlock = `<div class="missing-alert">🌿 <strong>You're missing ${missing.join(", ")}.</strong> Check the marketplace for local growers.</div>`;
+      }
+    }
+    return `<div class="recipe-card"><div class="recipe-title">${r.emoji} ${r.name}</div><div>${chips}</div>${missingBlock}</div>`;
+  }).join("");
+  body.innerHTML = html;
+}
+
+/* ---------------- BECOME A GROWER ---------------- */
+async function becomeGrower(){
+  const businessName = document.getElementById("ob_businessName").value.trim();
+  const description = document.getElementById("ob_description").value.trim();
+  const neighborhood = document.getElementById("ob_neighborhood").value.trim() || "Detroit";
+  if(!businessName){ showToast("Give your garden a name"); return; }
+  if(!firebaseReady || !state.uid){ showToast("Still connecting — try again in a moment"); return; }
+  try{
+    const growerRef = await fd_growersRef.add({
+      ownerUid: state.uid,
+      businessName, description, neighborhood,
+      city: "Detroit", state: "MI",
+      verificationStatus: "pending",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const gardenRef = await fd_gardensRef.add({
+      growerId: growerRef.id,
+      name: "My Garden",
+      description: "",
+      location: {neighborhood, city:"Detroit", state:"MI"},
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await fd_usersRef.doc(state.uid).update({role:"grower", isGrower:true, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    state.myGrower = {id:growerRef.id, ownerUid:state.uid, businessName, description, neighborhood, verificationStatus:"pending"};
+    state.myGarden = {id:gardenRef.id, growerId:growerRef.id, name:"My Garden"};
+    attachGrowerListeners();
+    renderGarden();
+    showToast(`${businessName} is set up — start adding crops`);
+  }catch(e){ console.error("becomeGrower failed:", e); showToast("Couldn't create your grower profile — try again"); }
+}
+
+/* ---------------- GARDEN BUDDY ---------------- */
+function daysUntil(ts){ return Math.ceil((Number(ts) - Date.now()) / 86400000); }
+
+function cropStatusLabel(c){
+  if(c.status==="listed") return "Listed on Fresh";
+  if(c.status==="harvested") return "Harvested";
+  const d = daysUntil(c.expectedHarvestDate);
+  if(d<=0) return "Ready";
+  if(d<=7) return "Ready soon";
+  if(d<=25) return "Growing";
+  return "Seedling";
+}
+function cropStatusClass(c){
+  if(c.status==="listed") return "status-listed";
+  if(c.status==="harvested") return "status-sold";
+  const d = daysUntil(c.expectedHarvestDate);
+  if(d<=7) return "status-ready";
+  if(d<=25) return "status-growing";
+  return "status-seedling";
+}
+
+function renderGarden(){
+  document.getElementById("growerOnboarding").classList.toggle("hidden", !!state.myGrower);
+  document.getElementById("growerDashboard").classList.toggle("hidden", !state.myGrower);
+  if(!state.myGrower) return;
+
+  document.getElementById("gardenSubtitle").textContent = state.myGrower.businessName + " — your growing season, tracked.";
+
+  const readyCrops = state.crops.filter(c=>c.status!=="harvested" && c.status!=="listed" && daysUntil(c.expectedHarvestDate)<=7);
+  document.getElementById("statCrops").textContent = state.crops.length;
+  document.getElementById("statReady").textContent = readyCrops.length;
+  document.getElementById("statRevenue").textContent = "$"+(state.gardenRevenue||0).toFixed(0);
+  document.getElementById("statOrders").textContent = state.gardenOrders||0;
+
+  const alertSection = document.getElementById("harvestAlertSection");
+  if(readyCrops.length){
+    const c = readyCrops[0];
+    alertSection.innerHTML = `<div class="alert-card">
+      <div class="alert-emoji">${EMOJI[c.name]||"🌱"}</div>
+      <div class="alert-body">
+        <div class="alert-title">Your ${c.name.toLowerCase()} are almost ready</div>
+        <div class="alert-sub">Expected: ${c.expectedQuantity} ${c.unit}</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="markHarvested('${c.id}')">Mark Harvested</button>
+    </div>`;
+  } else {
+    alertSection.innerHTML = "";
+  }
+
+  const stages = ["seedling","growing","ready","harvested","listed"];
+  const stageEmoji = {seedling:"🌱",growing:"🌿",ready:"🍅",harvested:"🧺",listed:"🛒"};
+  const lead = state.crops[0];
+  let currentIdx = 0;
+  if(lead){
+    if(lead.status==="listed") currentIdx=4;
+    else if(lead.status==="harvested") currentIdx=3;
+    else{
+      const d = daysUntil(lead.expectedHarvestDate);
+      currentIdx = d<=0 ? 2 : d<=7 ? 2 : d<=25 ? 1 : 0;
+    }
+  }
+  document.getElementById("harvestTimeline").innerHTML = stages.map((s,i)=>{
+    const cls = i<currentIdx?"done":i===currentIdx?"current":"";
+    const lineCls = i<currentIdx?"done":"";
+    return `<div class="tl-stage ${cls}"><div class="tl-dot">${stageEmoji[s]}</div><div class="tl-label">${s[0].toUpperCase()+s.slice(1)}</div></div>${i<stages.length-1?`<div class="tl-line ${lineCls}"></div>`:""}`;
+  }).join("");
+
+  document.getElementById("cropsList").innerHTML = state.crops.length ? state.crops.map(c=>{
+    const d = daysUntil(c.expectedHarvestDate);
+    const canHarvest = c.status!=="harvested" && c.status!=="listed" && d<=0;
+    return `<div class="crop-item">
+      <div class="crop-emoji">${EMOJI[c.name]||"🌱"}</div>
+      <div class="crop-info">
+        <div class="crop-name">${c.name}</div>
+        <div class="crop-status">${c.expectedQuantity} ${c.unit} expected · ${d>0?d+" days to harvest":"ready now"}</div>
+      </div>
+      <span class="status-pill ${cropStatusClass(c)}">${cropStatusLabel(c)}</span>
+      ${canHarvest?`<button class="btn btn-outline btn-sm" onclick="markHarvested('${c.id}')">Harvest</button>`:""}
+    </div>`;
+  }).join("") : emptyState("🌱","No crops yet — add one to get started.");
+
+  const unlisted = state.harvests.filter(h=>h.status!=="listed");
+  document.getElementById("harvestsList").innerHTML = unlisted.length ? unlisted.map(h=>`
+    <div class="crop-item">
+      <div class="crop-emoji">${EMOJI[h.cropName]||"🧺"}</div>
+      <div class="crop-info">
+        <div class="crop-name">${h.cropName}</div>
+        <div class="crop-status">${h.quantity} ${h.unit} harvested</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openPostHarvest('${h.id}')">List My Harvest</button>
+    </div>`).join("") : emptyState("🧺","Nothing harvested yet.");
+
+  document.getElementById("claimsList").innerHTML = state.incomingClaims.length ? state.incomingClaims.map(c=>{
+    const l = state.listings.find(x=>x.id===c.listingId);
+    const name = l ? l.productName : "(listing)";
+    return `<div class="crop-item">
+      <div class="crop-emoji">${l?(l.imageUrl||"📦"):"📦"}</div>
+      <div class="crop-info">
+        <div class="crop-name">${name}</div>
+        <div class="crop-status">${c.quantity||"—"} · status: ${c.status}</div>
+      </div>
+      ${c.status==="pending"?`<button class="btn btn-outline btn-sm" onclick="fulfillClaim('${c.id}','${c.listingId}')">Mark Fulfilled</button>`:""}
+    </div>`;
+  }).join("") : emptyState("📬","No claims yet.");
+}
+
+function openAddCrop(){
+  if(!state.myGrower){ showToast("Create a grower profile first"); return; }
+  openSheet("cropSheet");
+}
+async function addCrop(){
+  const name = document.getElementById("newCropName").value.trim();
+  const qty = parseFloat(document.getElementById("newCropYield").value) || 5;
+  const days = parseInt(document.getElementById("newCropDays").value) || 30;
+  if(!name){ showToast("Give the crop a name"); return; }
+  if(!firebaseReady || !state.myGrower){ showToast("Connect Firebase and set up your grower profile first"); return; }
+  try{
+    await fd_cropsRef.add({
+      growerId: state.myGrower.id,
+      gardenId: state.myGarden ? state.myGarden.id : null,
+      name,
+      status: "growing",
+      plantingDate: Date.now(),
+      expectedHarvestDate: Date.now() + days*86400000,
+      expectedQuantity: qty,
+      unit: "lbs",
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    closeSheet("cropSheet");
+    showToast(`${name} added to Garden Buddy`);
+  }catch(e){ console.error("addCrop failed:", e); showToast("Couldn't add that crop — try again"); }
+}
+
+/* ---------------- HARVEST ---------------- */
+async function markHarvested(cropId){
+  const c = state.crops.find(x=>x.id===cropId);
+  if(!c || !state.myGrower) return;
+  try{
+    await fd_harvestsRef.add({
+      growerId: state.myGrower.id,
+      gardenId: c.gardenId || null,
+      cropId: c.id,
+      cropName: c.name,
+      quantity: c.expectedQuantity,
+      unit: c.unit,
+      harvestDate: Date.now(),
+      status: "available",
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    await fd_cropsRef.doc(c.id).update({status:"harvested", updatedAt: Date.now()});
+    showToast(`${c.name} marked harvested — ready to list`);
+  }catch(e){ console.error("markHarvested failed:", e); showToast("Couldn't mark that harvested — try again"); }
+}
+
+/* ---------------- POST HARVEST → LIST ON FRESH ---------------- */
+function openPostHarvest(harvestId){
+  const h = state.harvests.find(x=>x.id===harvestId);
+  if(!h) return;
+  document.getElementById("postSheetBody").innerHTML = `
+    <div style="font-family:var(--font-display); font-size:19px; font-weight:600; margin-bottom:4px;">List your harvest</div>
+    <div style="font-size:12.5px; color:var(--muted); margin-bottom:18px;">Pre-filled from Garden Buddy — check it over and publish.</div>
+    <div class="field"><label>Crop</label><input value="${h.cropName}" disabled></div>
+    <div class="field"><label>Quantity (${h.unit})</label><input id="ph_qty" type="number" value="${h.quantity}"></div>
+    <div class="field"><label>Available</label><input value="Today" disabled></div>
+    <div class="field"><label>Listing type</label>
+      <div class="pill-select">
+        <button type="button" class="active" data-t="sell" onclick="phSetType(this,'sell')">🔵 Sell</button>
+        <button type="button" data-t="discount" onclick="phSetType(this,'discount')">🟡 Discount</button>
+        <button type="button" data-t="share" onclick="phSetType(this,'share')">🟢 Share</button>
+      </div>
+    </div>
+    <div class="field"><label>Price per ${h.unit}</label><input id="ph_price" type="number" step="0.5" value="2"></div>
+    <div class="field"><label>Pickup</label><input id="ph_pickup" value="Local pickup — ${state.myGrower?state.myGrower.businessName:""}"></div>
+    <button class="btn btn-primary btn-block" onclick="publishHarvest('${h.id}')">Publish to Fresh Detroit</button>
+  `;
+  window._phType = "sell";
+  openSheet("postSheet");
+}
+function phSetType(btn,t){
+  window._phType = t;
+  btn.parentElement.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+}
+async function publishHarvest(harvestId){
+  const h = state.harvests.find(x=>x.id===harvestId);
+  if(!h || !firebaseReady || !state.myGrower){ if(!firebaseReady) showToast("Connect Firebase to publish"); return; }
+  const qty = parseFloat(document.getElementById("ph_qty").value) || h.quantity;
+  const price = parseFloat(document.getElementById("ph_price").value) || 0;
+  const pickup = document.getElementById("ph_pickup").value.trim();
+  const type = window._phType || "sell";
+  try{
+    const listingRef = await fd_listingsRef.add({
+      growerId: state.myGrower.id,
+      harvestId: h.id,
+      productName: h.cropName,
+      description: `Freshly harvested ${h.cropName.toLowerCase()} from ${state.myGrower.businessName}`,
+      quantity: qty,
+      unit: h.unit,
+      listingType: type,
+      price: type==="share" ? 0 : price,
+      status: "published",
+      pickupInstructions: pickup,
+      neighborhood: state.myGrower.neighborhood || "Detroit",
+      city: "Detroit", state: "MI",
+      imageUrl: EMOJI[h.cropName] || "🌱",
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    await fd_harvestsRef.doc(h.id).update({status:"listed", updatedAt: Date.now()});
+    await fd_alertsRef.add({
+      listingId: listingRef.id,
+      growerId: state.myGrower.id,
+      productName: h.cropName,
+      message: `${qty} ${h.unit} of ${h.cropName.toLowerCase()} just listed in ${state.myGrower.neighborhood||"Detroit"}`,
+      neighborhood: state.myGrower.neighborhood || "Detroit",
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 7*86400000,
+      status: "active"
+    });
+    closeSheet("postSheet");
+    showToast(`${h.cropName} published to Fresh Detroit 🎉`);
+  }catch(e){ console.error("publishHarvest failed:", e); showToast("Couldn't publish — try again"); }
+}
+
+/* ---------------- FULFILL CLAIM (grower confirms) ---------------- */
+async function fulfillClaim(claimId, listingId){
+  try{
+    await fd_claimsRef.doc(claimId).update({status:"completed", updatedAt: Date.now()});
+    await fd_listingsRef.doc(listingId).update({status:"completed", updatedAt: Date.now()});
+    showToast("Marked fulfilled ✓");
+  }catch(e){ console.error("fulfillClaim failed:", e); showToast("Couldn't update that claim — try again"); }
+}
+
+/* ---------------- INIT ---------------- */
+setRole(state.role);
+initFirestore();
+</script>
+
+<!-- FARMS — plain JS "modules" (no bundler in this project); order matters:
+     data first, then the Firestore service, then rendering helpers,
+     then page wiring. All share the global scope with the script above,
+     so `db`, `firebaseReady`, `state`, `showToast`, etc. are already in
+     scope by the time any of these functions actually run. -->
+<script src="data/presetFarms.js"></script>
+<script src="firebase/farms.js"></script>
+<script src="components/farm-card.js"></script>
+<script src="pages/farms.js"></script>
+</body>
+</html>
