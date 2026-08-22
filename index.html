@@ -542,13 +542,15 @@ function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }c
    This key is safe to expose client-side; access is enforced
    by the Firestore rules in SETUP.md, not by hiding the key.
 ============================================================ */
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAkbNmC-6ttXVLt_DaM6vK5pxzNtnoaVVI",
+  authDomain: "food-finder-ai-8ac84.firebaseapp.com",
+  projectId: "food-finder-ai-8ac84",
+  storageBucket: "food-finder-ai-8ac84.firebasestorage.app",
+  messagingSenderId: "140217083748",
+  appId: "1:140217083748:web:3447409e077dae3beffc71",
+  measurementId: "G-J4KBJ781PF"
 };
 
 let db = null;
