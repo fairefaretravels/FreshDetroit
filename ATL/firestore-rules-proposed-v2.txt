@@ -1,0 +1,272 @@
+REVISED FIRESTORE RULES — v2 — STILL NOT DEPLOYED
+====================================================
+This supersedes firestore-rules-proposed.txt. Nothing has been published.
+This is draft #2, incorporating your six corrections. Waiting for your
+explicit approval before any deployment instructions are exercised.
+
+SUMMARY OF WHAT CHANGED FROM v1
+---------------------------------
+1. GROWER VERIFICATION — fa_growers.update now blocks a grower from
+   changing their own verificationStatus. Enforced by comparing
+   request.resource.data.verificationStatus == resource.data.verificationStatus
+   for owner updates; only isAdmin() bypasses that constraint. Also added
+   the same constraint to create (must start as 'pending', can't self-verify
+   at signup either).
+2. MARKETPLACE VERIFICATION — fa_listings.create/update now requires
+   verificationStatus == 'verified' on the owning grower whenever
+   status == 'published'. A pending grower can still create/update a
+   'draft' listing.
+3. NOTIFICATIONS — going with your preference (B): fa_notifications
+   create is now hard-blocked (if false) at the rules layer. Read/update
+   (mark-as-read) stay scoped to the target grower. See "REQUIRED CODE
+   FOLLOW-UP" below — this has a real consequence for the app.
+4. DELETIONS — fa_gardens / fa_crops / fa_harvests delete stay hard-
+   blocked (if false), unchanged from v1.
+5. EXISTING DATA — appReviews and crops/food_listings/orders blocks are
+   byte-for-byte unchanged from v1 (and from what you originally pasted
+   me / what's documented in the Food README and Fresh Detroit build notes).
+6. Nothing published. Waiting on your go-ahead.
+
+REQUIRED CODE FOLLOW-UP (flagging now, not yet made)
+------------------------------------------------------
+With fa_notifications.create hard-blocked, the client-side call in
+claimListing() (fresh-atl.html) that does
+`fa_notificationsRef.add({...})` will now fail with a permission error
+every time a consumer claims a real (non-demo) listing. Worse: that call
+currently sits inside the same try/catch as the claim creation itself,
+so the permission error would trip the catch block and show "Couldn't
+complete that — try again" even though the fa_claims doc was already
+saved successfully. That's a real bug once these rules go live, not a
+hypothetical — I have NOT touched the code yet, flagging it now so it's
+part of what you're approving. Once you approve the rules, I'll patch
+claimListing() to drop the client-side notification write entirely
+(matching option B — notifications become a future server-side/Cloud
+Function concern), so grower-facing "new claim" awareness continues to
+work purely off the live fa_claims listener already wired into the
+Garden Dashboard, which needs no notification doc at all.
+
+Similarly, publishHarvest() currently always sets status:"published"
+regardless of verification status. Once these rules are live, a
+not-yet-verified grower's publish attempt would be rejected by
+Firestore — the UI would just show a generic "Couldn't publish" toast
+with no explanation. I'd want to add a clear, honest UI state for that
+("Your grower profile is pending verification — you can save this as a
+draft now") rather than let people hit a silent permission wall. Also
+not yet made — flagging for your approval alongside the rules.
+
+====================================================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- EXISTING — Food (fairefaretravels/Food), unchanged ----------
+    match /appReviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.resource.data.stars is int
+                    && request.resource.data.stars >= 1
+                    && request.resource.data.stars <= 5
+                    && request.resource.data.comment is string
+                    && request.resource.data.comment.size() < 500
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() < 50;
+      allow update, delete: if false;
+    }
+
+    // ---------- EXISTING — old, unrelated legacy prototype, unchanged ----------
+    match /crops/{cropId} {
+      allow read: if true;
+      allow create: if request.resource.data.name is string
+                    && request.resource.data.name.size() < 60
+                    && request.resource.data.expectedLbs is number;
+      allow update: if request.resource.data.name == resource.data.name; // no renaming
+      allow delete: if false;
+    }
+    match /food_listings/{listingId} {
+      allow read: if true;
+      allow create: if request.resource.data.crop is string
+                    && request.resource.data.crop.size() < 60
+                    && request.resource.data.price is number;
+      allow update: if false;
+      allow delete: if true; // claiming a listing removes it from the active marketplace
+    }
+    match /orders/{orderId} {
+      allow read: if true;
+      allow create: if request.resource.data.crop is string
+                    && request.resource.data.price is number;
+      allow update, delete: if false;
+    }
+
+    // =================================================================
+    // NEW — FRESH ATL fa_* collections (v2 — corrected)
+    // =================================================================
+
+    // ---- helpers ----
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isGrowerOwner(growerId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/fa_growers/$(growerId))
+        && get(/databases/$(database)/documents/fa_growers/$(growerId)).data.ownerUid == request.auth.uid;
+    }
+    function isVerifiedGrower(growerId) {
+      return exists(/databases/$(database)/documents/fa_growers/$(growerId))
+        && get(/databases/$(database)/documents/fa_growers/$(growerId)).data.verificationStatus == 'verified';
+    }
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/fa_users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/fa_users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // fa_users/{uid}
+    match /fa_users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId
+                    && request.resource.data.role in ['consumer','grower'];
+      allow update: if isSignedIn() && request.auth.uid == userId
+                    && request.resource.data.role in ['consumer','grower']; // can't self-promote to admin
+      allow delete: if false;
+    }
+
+    // fa_growers/{growerId} — CORRECTED: owner can't touch verificationStatus
+    match /fa_growers/{growerId} {
+      allow read: if true;
+      allow create: if isSignedIn()
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.verificationStatus == 'pending'; // always starts pending
+      allow update: if isAdmin()
+                    || (
+                      isGrowerOwner(growerId)
+                      && request.resource.data.verificationStatus == resource.data.verificationStatus
+                      // owner may change any other field, but not verificationStatus
+                    );
+      allow delete: if false;
+    }
+
+    // fa_gardens/{gardenId} — unchanged from v1
+    match /fa_gardens/{gardenId} {
+      allow read: if true;
+      allow create: if isGrowerOwner(request.resource.data.growerId);
+      allow update: if isGrowerOwner(resource.data.growerId);
+      allow delete: if false;
+    }
+
+    // fa_crops/{cropId} — unchanged from v1
+    match /fa_crops/{cropId} {
+      allow read: if true;
+      allow create: if isGrowerOwner(request.resource.data.growerId);
+      allow update: if isGrowerOwner(resource.data.growerId);
+      allow delete: if false;
+    }
+
+    // fa_harvests/{harvestId} — unchanged from v1
+    match /fa_harvests/{harvestId} {
+      allow read: if true;
+      allow create: if isGrowerOwner(request.resource.data.growerId);
+      allow update: if isGrowerOwner(resource.data.growerId);
+      allow delete: if false;
+    }
+
+    // fa_listings/{listingId} — CORRECTED: publishing requires a verified grower
+    match /fa_listings/{listingId} {
+      allow read: if resource.data.status == 'published' || isGrowerOwner(resource.data.growerId);
+      allow create: if isGrowerOwner(request.resource.data.growerId)
+                    && request.resource.data.status in ['draft','published']
+                    && (request.resource.data.status != 'published' || isVerifiedGrower(request.resource.data.growerId));
+      allow update: if isGrowerOwner(resource.data.growerId)
+                    && (request.resource.data.status != 'published' || isVerifiedGrower(resource.data.growerId));
+      allow delete: if false;
+    }
+
+    // fa_claims/{claimId} — unchanged from v1
+    match /fa_claims/{claimId} {
+      allow read: if isSignedIn() && (resource.data.buyerUid == request.auth.uid || isGrowerOwner(resource.data.growerId));
+      allow create: if isSignedIn() && request.resource.data.buyerUid == request.auth.uid;
+      allow update: if isGrowerOwner(resource.data.growerId);
+      allow delete: if false;
+    }
+
+    // fa_alerts/{alertId} — unchanged from v1
+    match /fa_alerts/{alertId} {
+      allow read: if true;
+      allow create: if isGrowerOwner(request.resource.data.growerId);
+      allow update: if isGrowerOwner(resource.data.growerId);
+      allow delete: if false;
+    }
+
+    // fa_notifications/{notificationId} — CORRECTED: no client-side create (option B)
+    match /fa_notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.toGrowerId != null && isGrowerOwner(resource.data.toGrowerId);
+      allow create: if false; // MVP: not created client-side. Future: Admin SDK / Cloud Function only.
+      allow update: if isSignedIn() && isGrowerOwner(resource.data.toGrowerId); // mark read, once notifications exist
+      allow delete: if false;
+    }
+
+    // farms/{farmId} — NEW (Preset Farms system). Public directory, same
+    // pattern as fa_listings. See the assistant's note: a `createdByUid`
+    // field was added beyond the original spec so user-submitted farms
+    // can be scoped to their creator; preset-farm creation is admin-gated
+    // so an arbitrary signed-in visitor can't mint fake "preset" entries.
+    match /farms/{farmId} {
+      allow read: if true; // public farm directory — matches how listings are read
+      allow create: if isSignedIn() && (
+                      (request.resource.data.source == 'user'
+                        && request.resource.data.preset == false
+                        && request.resource.data.createdByUid == request.auth.uid)
+                      || (isAdmin()
+                        && request.resource.data.source == 'preset'
+                        && request.resource.data.preset == true)
+                    );
+      allow update: if isAdmin()
+                    || (isSignedIn() && resource.data.source == 'user' && resource.data.createdByUid == request.auth.uid);
+      allow delete: if false; // no arbitrary deletes; add owner/admin delete later if you want it
+    }
+  }
+}
+====================================================================
+
+FARMS RULE — WHY IT NEEDS isAdmin() FOR SEEDING
+--------------------------------------------------
+Your preset-seeding utility (seedPresetFarms() in firebase/farms.js)
+writes documents with source:"preset", preset:true. If any signed-in
+(including anonymous) visitor could write those fields, anyone could
+mint a fake "preset" farm and it would look like an official FRESH
+ATL record. So preset-farm creation is gated behind isAdmin() —
+the same helper already defined for the fa_* rules above.
+
+Practical consequence: to run the seed script, you (Mack) need to be
+signed in with a fa_users profile whose role is "admin" — which, per
+the existing admin-bootstrap note above, currently means manually
+editing your own fa_users/{uid} document in the Firebase console
+(there's no in-app path to become admin, by design). Once that's done
+once, seedPresetFarms() will work from the browser console or from a
+button you wire up for yourself.
+
+If you'd rather not deal with that one-time step, the alternative is
+to drop the isAdmin() requirement on preset creation and allow any
+signed-in user to create source:"user" farms only — then you'd add
+the three starter farms directly in the Firestore console's Data tab
+by hand (three documents, one-time), and skip running the seed script
+against production entirely. Either works; let me know which you'd
+rather do.
+
+====================================================================
+
+OPERATIONAL NOTE — how anyone becomes an admin
+--------------------------------------------------
+Since fa_users create/update both reject role=='admin' from the client
+(by design — no self-promotion), there's currently no in-app path to
+create an admin. The only way to grant admin is for you, as project
+owner, to manually edit a fa_users/{uid} doc's role field to "admin" in
+the Firebase console (Firestore Data tab), or via the Admin SDK. Same
+goes for flipping a grower's verificationStatus to "verified" — until
+you build an admin UI (explicitly out of scope per Phase 12), that's a
+manual console edit too. Flagging this now so it doesn't surprise you
+when you try to test the "verified grower can publish" path — you'll
+need to hand-edit one fa_growers doc's verificationStatus to "verified"
+in the console to exercise that flow.
+
+Still waiting on your approval before I:
+(a) touch the app code for the two follow-ups above, and
+(b) give you the Console publish steps + appReviews verification steps.
