@@ -24,13 +24,10 @@ async function renderFarmsPage() {
     farmsState.list = await getFarms();
     farmsState.loading = false;
   } catch (e) {
-    console.error("renderFarmsPage failed:", e.code, e.message);
+    console.error("renderFarmsPage failed:", e);
     farmsState.loading = false;
     farmsState.error = e.message;
-    const msg = e.code === "permission-denied"
-      ? "Firestore rules for the farms collection aren't published yet."
-      : "Couldn't load farms — check your connection or Firestore rules.";
-    el.innerHTML = emptyState("⚠️", msg);
+    el.innerHTML = emptyState("⚠️", "Couldn't load farms — check your connection or Firestore rules.");
     return;
   }
 
